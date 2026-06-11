@@ -1,10 +1,13 @@
-import React,{useContext} from 'react'
+import React,{useContext, useState} from 'react'
 import { useNavigate } from 'react-router-dom'
 import {UserDataContext} from '../context/userContext'
 import axios from 'axios'
 
 const UserDashboard = () => {
   const navigate = useNavigate()
+  const [file,setFile]=useState<File | null >(null);
+  // const [uploadedUrl, setUploadedUrl] = useState<string | null>(null)
+
   const context =useContext(UserDataContext);
   if(!context) return null;
 
@@ -20,7 +23,8 @@ const UserDashboard = () => {
          id:0,
         email:"",
         role:null,
-        user_name:""
+        user_name:"",
+        media:[]
     })
     navigate("/login")
   }catch(err){
@@ -37,13 +41,57 @@ const UserDashboard = () => {
          id:0,
         email:"",
         role:null,
-        user_name:""
+        user_name:"",
+        media:[]
     })
     navigate("/login")
   }catch(err){
     console.error("Error logging out",err)
   }
   }
+
+  const handleUpload=async ()=>{
+    try{
+  if (!file) return;
+
+    const formData=new FormData();
+    formData.append("file",file);
+    formData.append("userId",String(user.id))
+    const res = await axios.post("http://localhost:3000/upload-file",formData);
+    setUser({
+      ...user,
+       media: [...(user.media || []), {
+                id:res.data.id,
+                filename: res.data.file.filename,
+                file_url: res.data.file.file_url
+            }]
+
+    })
+    setFile(null)
+    console.log(res.data)
+    }catch(err){
+      console.log(err)
+    }
+    
+  }
+  const handleFileDelete=async (id:number)=>{
+    try{
+      const res= await axios.delete(`http://localhost:3000/delete-file/${id}`);
+      console.log(res.data.message);
+      setUser({
+        ...user,
+        media:user.media?.filter((item)=>{
+          return item.id!==id
+        })
+      })
+
+    }catch(err){
+      console.log(err)
+    }
+
+  }
+
+ 
 
   return (
     <div className="p-8 w-full min-h-screen bg-gray-200">
@@ -69,7 +117,8 @@ const UserDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-8 flex">
+          <div className='min-w-[60%]'>
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-800 mb-2">
               Welcome, {user?.user_name || 'User'}!
@@ -94,6 +143,45 @@ const UserDashboard = () => {
               </div>
             </div>
           )}
+          </div>
+          <div className='flex flex-col gap-4' >
+            <div className='flex flex-col gap-3'>
+            <label htmlFor="file" className='border w-[100px]  p-2 bg-gray-400 mr-2'> 
+              Select File
+            </label>
+          <input onChange={(e)=>{
+            if(e.target.files){
+              setFile(e.target.files[0])
+            }
+          }} id="file" className='p-2' type="file" hidden />
+          <span
+          className='border p-2 bg-zinc-200 mr-2'
+          >{file?file.name:"No file selected"}</span>
+          </div>
+          <button
+          onClick={handleUpload}
+          className='p-2 border bg-green-500 rounded-md max-w-[150px] '>Upload File</button>
+
+<div className='mt-4 max-w- grid grid-cols-2 gap-2'>
+         {user.media && user.media?.map((item,index)=>{
+            return (
+              <div key={index} className=' flex flex-col gap-2' >
+              <img
+              
+               src={item.file_url}
+                alt="uploaded"
+                className="h-36 object-cover rounded-md" />
+                <button
+                onClick={()=>{
+                  handleFileDelete(item.id)
+                }}
+                className='p-2 bg-red-500 rounded-md w-[80px]'>Delete</button>
+                </div>
+              )
+            })}
+            </div>
+          </div>
+         
         </div>
       </div>
     </div>

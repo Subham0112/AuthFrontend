@@ -1,11 +1,18 @@
 import axios from "axios";
 import { createContext,useEffect,useState } from "react";
 
+interface Media{
+    id:number,
+    filename:string,
+    file_url:string
+}
+
 interface UsersData{
     id:number,
     email:string,
     role:'user'|'admin'|'sudoadmin'|null,
-    user_name:string
+    user_name:string,
+    media?:Media[]
 }
 interface UserContextData{
     user:UsersData;
@@ -20,10 +27,11 @@ const UserContext =({children}:{children:React.ReactNode})=>{
         id:0,
         email:"",
         role:null,
-        user_name:""
+        user_name:"",
+        media:[]
     })
     const [loading,setLoading]=useState(true);
-
+    
     useEffect(()=>{
         const FetchUser=async ()=>{
             try{
