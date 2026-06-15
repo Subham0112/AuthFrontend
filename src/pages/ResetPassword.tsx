@@ -1,38 +1,59 @@
-import React from 'react'
 import { useState } from 'react';
 import axios from 'axios';
 import { BsEye,BsEyeSlash } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
+// import Alert from '../components/Alert'
+import type { AlertData } from '../components/Alert';
 
-const ResetPassword = () => {
+
+const ResetPassword = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
+
     const [newPassword,setNewPassword]=useState<string>('');
     const [confirmPassword,setConfirmPassword]=useState<string>('')
     const [showPassword,setShowPassword]=useState<boolean>(false);
     const [showConfirmPassword,setShowConfirmPassword]=useState<boolean>(false);
 
     const navigate=useNavigate();
+    
 
     const handleSubmit=async()=>{
-      const email=localStorage.getItem('email');
+      const email=localStorage.getItem("email")
       const resetData={
         newPassword,
         email
       }
       try{
         if(newPassword!==confirmPassword){
-          return console.log("Password and Cofirm password must be same")
+          setAlert({ type: 'error', title: 'Password mismatch', message: 'New password and confirmation must match.' })
+          return
         }
-        const res=await axios.patch("http://localhost:3000/reset-password",resetData)
-        console.log(res.status);
-        console.log("successfully reset password")
+        const res = await axios.patch("http://localhost:3000/reset-password",resetData)
+        setAlert({ type: 'success', title: 'Password reset', message: res.data.message })
         navigate("/login")
       }catch(err){
-        console.error("Error Resetting Password",err)
+          if(axios.isAxiosError(err)){
+      const data = err.response?.data
+      if(data?.message){
+        setAlert({
+          type:"error",
+          title:"Error Resetting Password",
+          message:data.message
+        })
+        console.error("Failed to Reset Password",data.message)
+      }
+  }else{
+    setAlert({
+      type:"error",
+      title:"Error Resetting Password",
+      message:"Failed to Reset Password"
+    })
+  }
       }
     }
 
   return (
-    <div> <div className='w-full h-screen flex items-center justify-center'>
+    <div> 
+      <div className='w-full h-screen flex items-center justify-center'>
       <div className='w-[400px] min-h-[300px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
         <h1 className='text-2xl font-bold'>Reset Password</h1>
         <div className='w-full mt-4'>

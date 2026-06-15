@@ -2,7 +2,7 @@ import axios from "axios";
 import { createContext,useEffect,useState } from "react";
 
 interface Media{
-    id:number,
+    media_id:number,
     filename:string,
     file_url:string
 }

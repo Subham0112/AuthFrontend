@@ -8,7 +8,7 @@ import axios from "axios"
 import { useNavigate } from 'react-router-dom';
 
 
-interface UserData {
+interface AdminData {
     email: string;
     password: string;
 }
@@ -18,9 +18,9 @@ interface ZodIssue {
     message: string;
 }
 
-const Login = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
-
-const [usersData, setUsersData] = useState<UserData>({
+const AdminLogin = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
+//   const [alert, setAlert] = useState<AlertData | null>(null)
+const [adminData, setAdminData] = useState<AdminData>({
     email: "",
     password: ""
 })  
@@ -36,12 +36,12 @@ useEffect(()=>{
     const { loading, user } = context;
     
     if(!loading && user.role){
-        if (user.role === "user") {
-            navigate("/dashboard", { replace: true })
-        } else if (user.role === "admin") {
+        if (user.role === "admin") {
             navigate("/admin/dashboard", { replace: true })
         } else if (user.role === "sudoadmin") {
             navigate("/sudoadmin/dashboard", { replace: true })
+        } else if (user.role === "user") {
+            navigate("/login", { replace: true })
         }
     }
 },[context, navigate])
@@ -53,8 +53,8 @@ if(!context){
 const {setUser}=context;
 
 const handleChange=(e:ChangeEvent<HTMLInputElement>)=>{
-    setUsersData({
-        ...usersData,
+    setAdminData({
+        ...adminData,
         [e.target.name]: e.target.value
     })
 
@@ -66,25 +66,30 @@ const handleChange=(e:ChangeEvent<HTMLInputElement>)=>{
 const handleSubmit =async ()=>{
         setFieldErrors({})
     try{
-        const res=await axios.post("http://localhost:3000/login",usersData,{
+        const res=await axios.post("http://localhost:3000/login",adminData,{
             withCredentials:true
         });
         const role = res.data.user.role;
-        if (role !== "user") {
+        if (role !== "admin" && role !== "sudoadmin") {
             await axios.post("http://localhost:3000/logout", {}, {
                 withCredentials: true
             });
             setAlert({
-                type: 'error',
-                title: 'Invalid Credentials',
-                message: 'Please Enter Correct Email and Password'
+                type: "error",
+                title: "Access Denied",
+                message: "Only admin or sudoadmin can log in here. Please use the user login page."
             });
-            navigate("/login", { replace: true });
+            navigate("/admin/login", { replace: true });
             return;
         }
-        console.log("logged in successfully");
         setUser(res.data.user);
-        navigate("/dashboard", { replace: true });
+        if (role === "admin") {
+            navigate("/admin/dashboard", { replace: true })
+        } else if (role === "sudoadmin") {
+            navigate("/sudoadmin/dashboard", { replace: true })
+        }else{
+            navigate("/admin/login")
+        }
         console.log(res.data.user)
     }catch(err){
              if (axios.isAxiosError(err)) {
@@ -112,23 +117,21 @@ const handleSubmit =async ()=>{
   return (
     <>
     <div className='w-full h-screen flex items-center justify-center'>
-
       <div className='w-[400px] min-h-[400px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
-        <h1 className='text-2xl font-bold'>Login Page</h1>
+        
+        <h1 className='text-2xl font-bold'>Admin Login Page</h1>
         <div className='w-full mt-4'>
             <div className='mb-2 flex flex-col w-full'>
                 <label htmlFor="email" className='block mb-2'>Email</label>
-                
             <input
              onChange={handleChange}
              name='email'
-             value={usersData.email}
+             value={adminData.email}
 
-            type="email" placeholder='Email'
-             className={`${fieldErrors.email?"border border-red-400": ""} w-full p-2 rounded-md`} />
+            type="email" placeholder='Email' className={`${fieldErrors.email?"border border-red-400": ""} w-full p-2 rounded-md`} />
             <div className='h-4'>
             {fieldErrors.email && (
-             <p className='text-red-500 text-xs'>{fieldErrors.email}</p>
+             <p className='text-red-500 text-xs mt-1'>{fieldErrors.email}</p>
             )}
             </div>
             </div>
@@ -138,11 +141,11 @@ const handleSubmit =async ()=>{
                 <input
                 onChange={handleChange}
                 name="password"
-                value={usersData.password}
+                value={adminData.password}
                 type={showPassword?"text":"password"} placeholder='Password'
-                 className={`${fieldErrors.password?"border border-red-400": ""} w-full p-2 rounded-md`} />
+                 className={`${fieldErrors.password?"border border-red-400": ""} w-full p-2 rounded-md`}/>
                  <span
-                 className='flex items-center'
+                 className='flex items-center h-'
                  onClick={()=>{
                  setShowPassword(!showPassword)
                   }}>{showPassword ? <BsEye />:<BsEyeSlash />}</span>
@@ -169,4 +172,4 @@ const handleSubmit =async ()=>{
   )
 }
 
-export default Login
+export default AdminLogin

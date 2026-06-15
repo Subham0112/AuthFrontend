@@ -1,30 +1,49 @@
-import React from 'react'
 import { useState } from 'react'
 import {useNavigate} from 'react-router-dom'
 import axios from 'axios'
+// import Alert from '../components/Alert'
+import type { AlertData } from '../components/Alert';
 
 
 
-const ForgotPassword = () => {
+
+const ForgotPassword = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
     const [email,setEmail]=useState<string>("");
 
 
     const navigate=useNavigate();
+
     const handleChange=(e:React.ChangeEvent<HTMLInputElement>)=>{
         setEmail(e.target.value)
 
     }
 
 const handleForgotClick=async ()=>{
-    const forgetEmail={
-        email
-    }
+    
     try{
-        const response=await axios.post("http://localhost:3000/forget-password",forgetEmail)
-        localStorage.setItem("email",email);
-        console.log("OTP sent to your email",response.data)
+       const res= await axios.post("http://localhost:3000/forget-password",{email})
+        localStorage.setItem("email",email)
+        
+        setAlert({ type: 'success', title: 'OTP Sent', message: res.data.message })
         navigate('/otp-page')
     }catch(err){
+        if(axios.isAxiosError(err)){
+      const data = err.response?.data
+      if(data?.message){
+        setAlert({
+          type:"error",
+          title:"Error Sending OTP ",
+          message:data.message
+        })
+        console.error("Error sending Otp on email",data.message)
+      }
+  }else{
+    setAlert({
+      type:"error",
+      title:"Error Sending OTP",
+      message:"Error Sending OTP in your email"
+    })
+  }
         console.error(err)
     }
 }

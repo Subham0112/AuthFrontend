@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+// import Alert from '../components/Alert'
+import type { AlertData } from '../components/Alert';
 
-const OtpPage = () => {
-  const [otp,setOtp]=useState<number>();
+
+const OtpPage = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
+  const [otp,setOtp]=useState<string>();
   const navigate=useNavigate();
   const email=localStorage.getItem("email");
 
+
   const handleChange=(e:React.ChangeEvent<HTMLInputElement>)=>{
-    setOtp(Number(e.target.value))
+    setOtp(e.target.value)
   }
 
   const handleSubmitOTP=async()=>{
@@ -21,11 +25,28 @@ try{
 
     const res=await axios.post("http://localhost:3000/verify-otp",otpData);
   if(res.status===200){
-    console.log(res.data.message);
+    setAlert({ type: 'success', title: 'OTP verified', message: res.data.message })
     navigate("/reset-password")
   }
 
 }catch(err){
+  if(axios.isAxiosError(err)){
+      const data = err.response?.data
+      if(data?.message){
+        setAlert({
+          type:"error",
+          title:"Error Verifying OTP",
+          message:data.message
+        })
+        console.error("OTP Verification failed",data.message)
+      }
+  }else{
+    setAlert({
+      type:"error",
+      title:"Error Verifying OTP",
+      message:"OTP Verification Failed"
+    })
+  }
   console.error(err)
 }
   }
@@ -36,9 +57,12 @@ try{
 try{
    const res=await axios.patch("http://localhost:3000/resend-otp",resendEmail);
     if(res.status===200){
-      return console.log(res.data.message);
+      setAlert({ type: 'info', title: 'OTP resent', message: res.data.message || 'A new OTP has been sent.' })
+      return
     }
 }catch(err){
+  const errorMessage = axios.isAxiosError(err) ? err.response?.data?.message || err.message : "Unable to resend OTP."
+  setAlert({ type: 'error', title: 'Resend failed', message: errorMessage })
   console.log(err)
 }
  
@@ -56,7 +80,7 @@ try{
                 <input
                 onChange={handleChange}
                 value={otp}
-                type="number" placeholder='Enter your otp' className='w-full p-2 rounded-md mb-4' />
+                type="text" placeholder='Enter your otp' className='w-full p-2 rounded-md mb-4' />
             </div>
             <button
               onClick={handleSubmitOTP}

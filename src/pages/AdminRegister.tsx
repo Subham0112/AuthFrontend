@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react'
+import { useContext, useState } from 'react'
 import { BsEye, BsEyeSlash } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios"
@@ -18,51 +18,48 @@ interface ZodIssue {
     message: string;
 }
 
-const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
-
-    const [userRegisterData, setRegisterData] = useState<RegisterData>({
+const AdminRegister = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
+    const [adminRegisterData, setRegisterData] = useState<RegisterData>({
         name: "",
         email: "",
         password: "",
-        role: "user"
+        role: "admin"
     })
+    const context = useContext(UserDataContext);
     const [showPassword, setShowPassword] = useState<boolean>(false)
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
     const navigate=useNavigate()
-    const context =useContext(UserDataContext)
+
+    if (!context ) return null;
+
+    const {setUser} = context
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setRegisterData({
-            ...userRegisterData,
+            ...adminRegisterData,
             [e.target.name]: e.target.value
         })
         if (fieldErrors[e.target.name]) {
             setFieldErrors({ ...fieldErrors, [e.target.name]: "" })
         }
     }
-    if(!context) return null
-
-    const {setUser}=context;
 
     const handleSubmit = async () => {
         setFieldErrors({})
 
         try {
-            const res= await axios.post("http://localhost:3000/register", userRegisterData,{
+            const res= await axios.post("http://localhost:3000/register", adminRegisterData,{
                 withCredentials:true
             });
-            setAlert({ type: 'success', title: 'Registered', message: 'Your account was created successfully.' })
+            setAlert({ type: 'success', title: 'Registered', message: 'Admin Registered successfully.' })
             console.log(res.data.user);
             setUser(res.data.user)
-            navigate("/dashboard")
-            setRegisterData({ name: "", email: "", password: "", role: "user" })
-
+            navigate("/admin/dashboard", { replace: true })
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 const data = err.response?.data
 
                 if (data?.errors) {
-                    // Zod field errors — map array to { fieldName: message }
                     const mapped: Record<string, string> = {}
                     data.errors.forEach((e: ZodIssue) => {
                         if (e.path?.[0]) {
@@ -72,7 +69,6 @@ const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<Ale
                     setFieldErrors(mapped)
 
                 } else if (data?.message) {
-                    // General error like "User already exists"
                     setAlert({ type: 'error', title: 'Register failed', message: data.message })
                 }
 
@@ -86,7 +82,7 @@ const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<Ale
         <div>
             <div className='w-full h-screen flex items-center justify-center'>
                 <div className='w-[450px] min-h-[400px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
-                    <h1 className='text-2xl font-bold'>Register Page</h1>
+                    <h1 className='text-2xl font-bold'>Admin Register Page</h1>
                     <div className="w-full mt-4">
 
                        
@@ -94,7 +90,7 @@ const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<Ale
                             <label htmlFor="name" className="block mb-2">Name</label>
                             <input
                                 onChange={handleChange}
-                                value={userRegisterData.name}
+                                value={adminRegisterData.name}
                                 name='name'
                                 type="text"
                                 placeholder='Enter Name'
@@ -112,11 +108,11 @@ const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<Ale
                             <label htmlFor="email" className="block mb-2">Email</label>
                             <input
                                 onChange={handleChange}
-                                value={userRegisterData.email}
+                                value={adminRegisterData.email}
                                 name='email'
                                 type="email"
                                 placeholder='Enter Email'
-                            className={`${fieldErrors.email?"border border-red-400": ""} w-full p-2 rounded-md`}
+                                className={`${fieldErrors.email?"border border-red-400": ""} w-full p-2 rounded-md`}
                             />
                             <div className='h-4'>
                             {fieldErrors.email && (
@@ -131,7 +127,7 @@ const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<Ale
                             <div className="flex items-center gap-2">
                                 <input
                                     onChange={handleChange}
-                                    value={userRegisterData.password}
+                                    value={adminRegisterData.password}
                                     name='password'
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Enter Password"
@@ -156,7 +152,7 @@ const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<Ale
                     </div>
 
                     <div className='w-full mt-8 text-center'>
-                        <p>Already have an Account? <a href='/login' className='text-blue-500'>Login</a></p>
+                        <p>Already have an Account? <a href='/admin/login' className='text-blue-500'>Login</a></p>
                     </div>
                 </div>
             </div>
@@ -164,4 +160,4 @@ const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<Ale
     )
 }
 
-export default Register
+export default AdminRegister

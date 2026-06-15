@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import type { UsersDatas } from '../UserData';
 import {UserDataContext} from "../context/userContext";
+// import Alert from '../components/Alert'
+import type { AlertData } from '../components/Alert';
 
 
 
-const SuperAdminDashboard = () => {
+const SuperAdminDashboard = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
+  
   const [users,setUsers]=useState<UsersDatas[]>([]);
   const context = useContext(UserDataContext);
   const navigate=useNavigate();
@@ -33,12 +36,35 @@ const handleDelete=async (id:number)=>{
   const deleteUser=await axios.delete(`http://localhost:3000/deleteUser/${id}`,{
      withCredentials:true
   });
+  if(deleteUser.status===200){
+    setAlert({
+      type:"success",
+      title:"User Deleted",
+      message:deleteUser.data.message
+    })
+  }
   console.log(deleteUser.data.message)
   setUsers(users.filter((user)=>{
     return user.id!==id;
   }))
   }catch(err){
-    console.log("Error deleting users",err)
+   if(axios.isAxiosError(err)){
+      const data = err.response?.data
+      if(data?.message){
+        setAlert({
+          type:"error",
+          title:"Error Deleting Users",
+          message:data.message
+        })
+        console.error("Error deleting user:",data.message)
+      }
+  }else{
+    setAlert({
+      type:"error",
+      title:"Error Deleting Users",
+      message:"Error Deleting Users"
+    })
+  }
   }
 
 
@@ -56,7 +82,7 @@ const handleLogout=async ()=>{
         role:null,
         user_name:""
     })
-    navigate("/login")
+    navigate("/admin/login")
   }catch(err){
     console.error("Error logging out",err)
   }
@@ -74,7 +100,7 @@ const handleLogout=async ()=>{
         role:null,
         user_name:""
     })
-    navigate("/login")
+    navigate("/admin/login")
   }catch(err){
     console.error("Error logging out",err)
   }

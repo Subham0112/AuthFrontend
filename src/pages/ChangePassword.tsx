@@ -1,21 +1,26 @@
-import React, { useState } from 'react'
+import { useContext, useState } from 'react'
 import { BsEye,BsEyeSlash } from 'react-icons/bs';
 import axios from "axios"
+// import Alert from '../components/Alert'
+import type { AlertData } from '../components/Alert';
+import {UserDataContext} from "../context/userContext";
 
 interface ChangePassword{
-    email:string;
     password:string;
     changePassword:string;
 }
-const ChangePasswordPage = () => {
+const ChangePasswordPage = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
+
 
     const [changeData,setChangeData]=useState<ChangePassword>({
-        email:"",
         password: "",
         changePassword: ""
     })
     const [showPassword,setShowPassword]=useState<boolean>(false)
     const [showChangePassword,setShowChangePassword]=useState<boolean>(false)
+    const context=useContext(UserDataContext);
+    if(!context) return null
+    const {user} = context
 
     const handleChange=(e:React.ChangeEvent<HTMLInputElement>)=>{
         setChangeData({
@@ -26,18 +31,38 @@ const ChangePasswordPage = () => {
 
     const handleChangePassword=async ()=>{
         try{
-            const changePassword=await axios.patch("http://localhost:3000/change-password",changeData,{
+            const updateData={
+                email:user.email,
+                password:changeData.password,
+                changePassword:changeData.changePassword
+            }
+            await axios.patch("http://localhost:3000/change-password",updateData,{
                 withCredentials:true
             });
-            console.log("Successfully Password Changed users:",changePassword.data)
+            setAlert({ type: 'success', title: 'Password changed', message: 'Your password was updated successfully.' })
             setChangeData({
-                email: "",
                 password: "",
                 changePassword: ""
 
             })
         }catch(err){
-            console.error("Error:",err)
+    if(axios.isAxiosError(err)){
+      const data = err.response?.data
+      if(data?.message){
+        setAlert({
+          type:"error",
+          title:"Error Password Change",
+          message:data.message
+        })
+        console.error("Error Changing Password:",data.message)
+      }
+  }else{
+    setAlert({
+      type:"error",
+      title:"Error Changing Password",
+      message:"Error Changing Password"
+    })
+  }
         }
     }
   return (
@@ -46,16 +71,6 @@ const ChangePasswordPage = () => {
         <div className='w-[450px] min-h-[400px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
         <h1 className='text-2xl font-bold'>Change Password</h1>
         <div className="w-full mt-4">
-            <div className='mb-4 flex flex-col w-full'>
-            <label className="block mb-2">Email</label>
-            <input
-            onChange={handleChange}
-            value={changeData.email}
-            name='email'
-            type="text" placeholder='Enter Email' className='w-full p-2 rounded-md mb-4' />
-            </div>
-
-
             <div className='mb-4 flex flex-col w-full'>
             <label className="block mb-2">Password</label>
             <div className="flex items-center gap-2">
@@ -81,15 +96,12 @@ const ChangePasswordPage = () => {
             type={showChangePassword?"text":"password"} placeholder="Enter New Password" className='w-full p-2 rounded-md ' />
             <span onClick={()=>{
                 setShowChangePassword(!showChangePassword)
-             }}>{showPassword ? <BsEye />:<BsEyeSlash />}</span>
+             }}>{showChangePassword ? <BsEye />:<BsEyeSlash />}</span>
             </div>
             </div>
             <button
             onClick={handleChangePassword}
              className='w-full bg-blue-500 text-white p-2 rounded-md'>Change Password</button>
-        </div>
-        <div className='w-full mt-8 text-center'>
-            <p>Back to <a href='/login' className='text-blue-500'>Login</a></p>
         </div>
         </div>
     </div>

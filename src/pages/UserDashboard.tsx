@@ -1,12 +1,16 @@
-import React,{useContext, useState} from 'react'
+import React,{useContext, useState,useRef} from 'react'
 import { useNavigate } from 'react-router-dom'
 import {UserDataContext} from '../context/userContext'
 import axios from 'axios'
+// import Alert from '../components/Alert'
+import type { AlertData } from '../components/Alert'
 
-const UserDashboard = () => {
+
+const UserDashboard = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
+
   const navigate = useNavigate()
   const [file,setFile]=useState<File | null >(null);
-  // const [uploadedUrl, setUploadedUrl] = useState<string | null>(null)
+  const fileRef=useRef<HTMLInputElement | null>(null);
 
   const context =useContext(UserDataContext);
   if(!context) return null;
@@ -61,19 +65,66 @@ const UserDashboard = () => {
     setUser({
       ...user,
        media: [...(user.media || []), {
-                id:res.data.id,
+                media_id:res.data.file.media_id,
                 filename: res.data.file.filename,
                 file_url: res.data.file.file_url
             }]
 
     })
+    setAlert({
+      type:"success",
+      title:"File Uploaded",
+      message:res.data.message
+    })
+
     setFile(null)
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
     console.log(res.data)
     }catch(err){
-      console.log(err)
+      if(axios.isAxiosError(err)){
+        const data = err.response?.data
+      if(data?.message){
+        setAlert({
+          type:"error",
+          title:"Error Uploading",
+          message:data.message
+        })
+        console.error("Error deleting user:",data.message)
+      }
+      }else{
+        setAlert({
+           type:"error",
+          title:"Error Uploading",
+          message:"Error Uploading Files"
+        })
+      }
+      
     }
     
   }
+
+  const handleDeleteAccount=async (id:number)=>{
+  try{
+  await axios.delete(`http://localhost:3000/deleteUser/${id}`,{
+     withCredentials:true
+  });
+  setUser({
+         id:0,
+        email:"",
+        role:null,
+        user_name:"",
+        media:[]
+    })
+  navigate("/login")
+  }catch(err){
+    console.log("Error deleting users",err)
+  }
+
+
+}
+
   const handleFileDelete=async (id:number)=>{
     try{
       const res= await axios.delete(`http://localhost:3000/delete-file/${id}`);
@@ -81,11 +132,31 @@ const UserDashboard = () => {
       setUser({
         ...user,
         media:user.media?.filter((item)=>{
-          return item.id!==id
+          return item.media_id!==id
         })
       })
-
+      setAlert({
+        type:"success",
+        title:"File Deleted",
+        message:res.data.message
+      })
     }catch(err){
+      if(axios.isAxiosError(err)){
+       const data = err.response?.data
+       if(data?.message){
+        setAlert({
+          type:"error",
+          title:"Error Deleting",
+          message:data.message
+        })
+       }
+      }else{
+        setAlert({
+           type:"error",
+          title:"Error Uploading",
+          message:"Error Uploading Files"
+        })
+      }
       console.log(err)
     }
 
@@ -112,7 +183,11 @@ const UserDashboard = () => {
         navigate("/change-password")
       }}
       className='p-2 bg-blue-400 text-white border rounded-md'>Change Password</button>
-      
+      <button
+      onClick={()=>{
+        handleDeleteAccount(user.id)
+      }}
+      className='p-2 bg-red-600 text-white border rounded-md'>Delete Account</button>
       </div>
       </div>
 
@@ -149,7 +224,9 @@ const UserDashboard = () => {
             <label htmlFor="file" className='border w-[100px]  p-2 bg-gray-400 mr-2'> 
               Select File
             </label>
-          <input onChange={(e)=>{
+          <input
+          ref={fileRef}
+          onChange={(e)=>{
             if(e.target.files){
               setFile(e.target.files[0])
             }
@@ -173,7 +250,7 @@ const UserDashboard = () => {
                 className="h-36 object-cover rounded-md" />
                 <button
                 onClick={()=>{
-                  handleFileDelete(item.id)
+                  handleFileDelete(item.media_id)
                 }}
                 className='p-2 bg-red-500 rounded-md w-[80px]'>Delete</button>
                 </div>
