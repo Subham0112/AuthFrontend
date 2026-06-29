@@ -14,6 +14,10 @@ import type { AlertData } from './components/Alert'
 import OTPPage from './pages/otpPage'
 import ChangePasswordPage from './pages/ChangePassword'
 import { useState } from 'react'
+import HomePage from './pages/HomePage'
+import ProfilePage from './pages/ProfilePage'
+import Message from './pages/Message'
+import ChatPage from './pages/ChatPage'
 
 
 const App = () => {
@@ -30,6 +34,7 @@ const App = () => {
         <Route path="/register" element={<Register setAlert={setAlert} />} />
         <Route path="/admin/register" element={<AdminRegister setAlert={setAlert} />} />
         <Route path="/admin/login" element={<AdminLogin  setAlert={setAlert}/>} />
+
         <Route path="/sudoadmin/dashboard" element={
           <ProtectectedRoute allowedRoles={["sudoadmin"]} redirectTo="/admin/login">
             <SuperAdminDashboard setAlert={setAlert} />
@@ -40,17 +45,37 @@ const App = () => {
             <AdminDashboard setAlert={setAlert} />
           </ProtectectedRoute>
         } />
+
          <Route path="/dashboard" element={
           <ProtectectedRoute allowedRoles={["user"]} redirectTo="/login">
             <UserDashboard setAlert={setAlert} />
           </ProtectectedRoute>
         } />
+        <Route path="/homepage" element={
+          <ProtectectedRoute allowedRoles={["user"]} redirectTo='/login'>
+            <HomePage setAlert={setAlert} />
+          </ProtectectedRoute>
+        } />
+        <Route path="/users/:userId" element={
+          <ProtectectedRoute allowedRoles={["user"]} redirectTo='/login'>
+            <ProfilePage setAlert={setAlert} />
+          </ProtectectedRoute>
+        }/>
         <Route path="/change-password" element={
           <ProtectectedRoute allowedRoles={["user","admin","sudoadmin"]} redirectTo="/login">
             <ChangePasswordPage setAlert={setAlert} />
           </ProtectectedRoute>
         } />
-
+          <Route path="/messages" element={
+          <ProtectectedRoute allowedRoles={["user"]} redirectTo="/login">
+            <Message setAlert={setAlert} />
+          </ProtectectedRoute>
+        } />
+         <Route path="/messages/:userId" element={
+          <ProtectectedRoute allowedRoles={["user"]} redirectTo="/login">
+            <ChatPage />
+          </ProtectectedRoute>
+        } />
         <Route path="/forgot-password" element={<ForgotPassword setAlert={setAlert} />} />
         <Route path="/otp-page" element={<OTPPage setAlert={setAlert}  />} />
         <Route path='/reset-password' element={<ResetPassword setAlert={setAlert}/>} />

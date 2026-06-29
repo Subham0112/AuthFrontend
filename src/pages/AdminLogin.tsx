@@ -66,12 +66,12 @@ const handleChange=(e:ChangeEvent<HTMLInputElement>)=>{
 const handleSubmit =async ()=>{
         setFieldErrors({})
     try{
-        const res=await axios.post("http://localhost:3000/login",adminData,{
+        const res=await axios.post(`${import.meta.env.VITE_BACKEND_API}/login`,adminData,{
             withCredentials:true
         });
         const role = res.data.user.role;
         if (role !== "admin" && role !== "sudoadmin") {
-            await axios.post("http://localhost:3000/logout", {}, {
+            await axios.post(`${import.meta.env.VITE_BACKEND_API}/logout`, {}, {
                 withCredentials: true
             });
             setAlert({

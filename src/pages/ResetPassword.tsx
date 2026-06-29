@@ -27,7 +27,7 @@ const ResetPassword = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateActio
           setAlert({ type: 'error', title: 'Password mismatch', message: 'New password and confirmation must match.' })
           return
         }
-        const res = await axios.patch("http://localhost:3000/reset-password",resetData)
+        const res = await axios.patch(`${import.meta.env.VITE_BACKEND_API}/reset-password`,resetData)
         setAlert({ type: 'success', title: 'Password reset', message: res.data.message })
         navigate("/login")
       }catch(err){

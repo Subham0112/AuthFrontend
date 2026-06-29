@@ -48,7 +48,7 @@ const AdminRegister = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateActio
         setFieldErrors({})
 
         try {
-            const res= await axios.post("http://localhost:3000/register", adminRegisterData,{
+            const res= await axios.post(`${import.meta.env.VITE_BACKEND_API}/register`, adminRegisterData,{
                 withCredentials:true
             });
             setAlert({ type: 'success', title: 'Registered', message: 'Admin Registered successfully.' })

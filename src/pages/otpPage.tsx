@@ -23,7 +23,7 @@ try{
     email
   }
 
-    const res=await axios.post("http://localhost:3000/verify-otp",otpData);
+    const res=await axios.post(`${import.meta.env.VITE_BACKEND_API}/verify-otp`,otpData);
   if(res.status===200){
     setAlert({ type: 'success', title: 'OTP verified', message: res.data.message })
     navigate("/reset-password")
@@ -55,7 +55,7 @@ try{
       email
     }
 try{
-   const res=await axios.patch("http://localhost:3000/resend-otp",resendEmail);
+   const res=await axios.patch(`${import.meta.env.VITE_BACKEND_API}/resend-otp`,resendEmail);
     if(res.status===200){
       setAlert({ type: 'info', title: 'OTP resent', message: res.data.message || 'A new OTP has been sent.' })
       return

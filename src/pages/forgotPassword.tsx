@@ -21,7 +21,7 @@ const ForgotPassword = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateActi
 const handleForgotClick=async ()=>{
     
     try{
-       const res= await axios.post("http://localhost:3000/forget-password",{email})
+       const res= await axios.post(`${import.meta.env.VITE_BACKEND_API}/forget-password`,{email})
         localStorage.setItem("email",email)
         
         setAlert({ type: 'success', title: 'OTP Sent', message: res.data.message })

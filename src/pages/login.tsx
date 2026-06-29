@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import { UserDataContext } from '../context/userContext';
 // import Alert from '../components/Alert'
 import type { AlertData } from '../components/Alert';
-import { BsEye,BsEyeSlash } from 'react-icons/bs';
+import { BsEye, BsEyeSlash, BsEnvelope, BsLock } from 'react-icons/bs';
 import axios from "axios"
 import { useNavigate } from 'react-router-dom';
 
@@ -50,7 +50,6 @@ if(!context){
     return null
 }
 
-const {setUser}=context;
 
 const handleChange=(e:ChangeEvent<HTMLInputElement>)=>{
     setUsersData({
@@ -66,12 +65,12 @@ const handleChange=(e:ChangeEvent<HTMLInputElement>)=>{
 const handleSubmit =async ()=>{
         setFieldErrors({})
     try{
-        const res=await axios.post("http://localhost:3000/login",usersData,{
+        const res=await axios.post(`${import.meta.env.VITE_BACKEND_API}/login`,usersData,{
             withCredentials:true
         });
         const role = res.data.user.role;
         if (role !== "user") {
-            await axios.post("http://localhost:3000/logout", {}, {
+            await axios.post(`${import.meta.env.VITE_BACKEND_API}/logout`, {}, {
                 withCredentials: true
             });
             setAlert({
@@ -82,8 +81,8 @@ const handleSubmit =async ()=>{
             navigate("/login", { replace: true });
             return;
         }
+        await context?.refreshUser();
         console.log("logged in successfully");
-        setUser(res.data.user);
         navigate("/dashboard", { replace: true });
         console.log(res.data.user)
     }catch(err){
@@ -107,65 +106,86 @@ const handleSubmit =async ()=>{
             } else {
                 setAlert({ type: 'error', title: 'Login failed', message: "Login failed." })
             }
-    }
+         }
 }
   return (
-    <>
-    <div className='w-full h-screen flex items-center justify-center'>
+    <div className='min-h-screen bg-gradient-to-br from-slate-200  to-blue-250 flex items-center justify-center px-4 py-10'>
+      <div className='w-full max-w-sm bg-white border border-slate-100 shadow-xl shadow-slate-200/60 rounded-2xl p-8 sm:p-9'>
 
-      <div className='w-[400px] min-h-[400px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
-        <h1 className='text-2xl font-bold'>Login Page</h1>
-        <div className='w-full mt-4'>
-            <div className='mb-2 flex flex-col w-full'>
-                <label htmlFor="email" className='block mb-2'>Email</label>
-                
-            <input
-             onChange={handleChange}
-             name='email'
-             value={usersData.email}
+        <div className='mb-8 text-center'>
+          <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white font-semibold text-lg'>
+            M
+          </div>
+          <h1 className='text-xl font-semibold text-slate-900'>Welcome back</h1>
+          <p className='mt-1 text-sm text-slate-500'>Log in to MySocialApp to continue</p>
+        </div>
 
-            type="email" placeholder='Email'
-             className={`${fieldErrors.email?"border border-red-400": ""} w-full p-2 rounded-md`} />
-            <div className='h-4'>
+        <div className='space-y-4'>
+          <div className='space-y-1.5'>
+            <label htmlFor="email" className='block text-sm font-medium text-slate-700'>Email</label>
+            <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3.5 py-2.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 ${fieldErrors.email ? 'border-red-300' : 'border-slate-200 focus-within:border-blue-400'}`}>
+              <BsEnvelope className='text-slate-400 shrink-0' />
+              <input
+                id="email"
+                onChange={handleChange}
+                name='email'
+                value={usersData.email}
+                type="email"
+                placeholder='you@example.com'
+                className='w-full bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-400'
+              />
+            </div>
             {fieldErrors.email && (
-             <p className='text-red-500 text-xs'>{fieldErrors.email}</p>
+              <p className='text-red-500 text-xs'>{fieldErrors.email}</p>
             )}
-            </div>
-            </div>
-            <div className='mb-2 flex flex-col'> 
-                <label htmlFor="password" className='block mb-2'>Password</label>
-                <div className='flex items-center gap-2'>
-                <input
+          </div>
+
+          <div className='space-y-1.5'>
+            <label htmlFor="password" className='block text-sm font-medium text-slate-700'>Password</label>
+            <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3.5 py-2.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 ${fieldErrors.password ? 'border-red-300' : 'border-slate-200 focus-within:border-blue-400'}`}>
+              <BsLock className='text-slate-400 shrink-0' />
+              <input
+                id="password"
                 onChange={handleChange}
                 name="password"
                 value={usersData.password}
-                type={showPassword?"text":"password"} placeholder='Password'
-                 className={`${fieldErrors.password?"border border-red-400": ""} w-full p-2 rounded-md`} />
-                 <span
-                 className='flex items-center'
-                 onClick={()=>{
-                 setShowPassword(!showPassword)
-                  }}>{showPassword ? <BsEye />:<BsEyeSlash />}</span>
-                 
-                </div>
-                <div className='h-4'>
-                 {fieldErrors.password && (
-                <p className='text-red-500 text-xs mt-1'>{fieldErrors.password}</p>
-                )}
-                </div>
+                type={showPassword ? "text" : "password"}
+                placeholder='••••••••'
+                className='w-full bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-400'
+              />
+              <button
+                type='button'
+                onClick={() => setShowPassword(!showPassword)}
+                className='text-slate-400 hover:text-slate-700 transition focus:outline-none shrink-0'
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <BsEye /> : <BsEyeSlash />}
+              </button>
             </div>
-            <button
+            {fieldErrors.password && (
+              <p className='text-red-500 text-xs'>{fieldErrors.password}</p>
+            )}
+          </div>
+
+          <button
             onClick={handleSubmit}
-             className='w-full bg-blue-500 text-white p-2 rounded-md'>Login</button>
+            className='w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800'>
+            Log in
+          </button>
         </div>
-        <div className='w-full mt-4 text-center'>
-            <p className='mt-4'>Don't have an account? <a href="/register" className='text-blue-500'>Register</a></p>
-            <p className='mt-2'><a href="/forgot-password" className='text-blue-500'>Forgot Password?</a></p>
+
+        <div className='mt-6 flex items-center gap-3 text-xs text-slate-400'>
+          <div className='h-px flex-1 bg-slate-100' />
+          <span>or</span>
+          <div className='h-px flex-1 bg-slate-100' />
+        </div>
+
+        <div className='mt-6 text-center text-sm text-slate-500'>
+          <p>Don't have an account? <a href="/register" className='font-medium text-blue-600 hover:text-blue-700'>Register</a></p>
+          <p className='mt-2'><a href="/forgot-password" className='text-slate-500 hover:text-slate-700'>Forgot password?</a></p>
         </div>
       </div>
     </div>
-        
-    </>
   )
 }
 

@@ -17,7 +17,7 @@ const SuperAdminDashboard = ({setAlert}:{ setAlert: React.Dispatch<React.SetStat
 useEffect(()=>{
   try{
     const FetchAllUsers=async ()=>{
-       const response=await axios.get("http://localhost:3000/getAllUsers",{
+       const response=await axios.get(`${import.meta.env.VITE_BACKEND_API}/getAllUsers`,{
         withCredentials:true
        });
        setUsers(response.data)
@@ -33,7 +33,7 @@ const { user, setUser } = context ;
 
 const handleDelete=async (id:number)=>{
   try{
-  const deleteUser=await axios.delete(`http://localhost:3000/deleteUser/${id}`,{
+  const deleteUser=await axios.delete(`${import.meta.env.VITE_BACKEND_API}/deleteUser/${id}`,{
      withCredentials:true
   });
   if(deleteUser.status===200){
@@ -72,7 +72,7 @@ const handleDelete=async (id:number)=>{
 
 const handleLogout=async ()=>{
   try{
-    const res =await axios.post("http://localhost:3000/logout",{},{
+    const res =await axios.post(`${import.meta.env.VITE_BACKEND_API}/logout`,{},{
       withCredentials:true
     })
     console.log(res.data.message)
@@ -90,7 +90,7 @@ const handleLogout=async ()=>{
 }
  const handleLogoutFromAll = async () => {
      try{
-    const res =await axios.patch("http://localhost:3000/logout-from-all",{},{
+    const res =await axios.patch(`${import.meta.env.VITE_BACKEND_API}/logout-from-all`,{},{
       withCredentials:true
     })
     console.log(res.data.message)

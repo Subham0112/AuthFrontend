@@ -36,7 +36,7 @@ const ChangePasswordPage = ({setAlert}:{ setAlert: React.Dispatch<React.SetState
                 password:changeData.password,
                 changePassword:changeData.changePassword
             }
-            await axios.patch("http://localhost:3000/change-password",updateData,{
+            await axios.patch(`${import.meta.env.VITE_BACKEND_API}/change-password`,updateData,{
                 withCredentials:true
             });
             setAlert({ type: 'success', title: 'Password changed', message: 'Your password was updated successfully.' })
@@ -72,7 +72,7 @@ const ChangePasswordPage = ({setAlert}:{ setAlert: React.Dispatch<React.SetState
         <h1 className='text-2xl font-bold'>Change Password</h1>
         <div className="w-full mt-4">
             <div className='mb-4 flex flex-col w-full'>
-            <label className="block mb-2">Password</label>
+            <label className="block mb-2">Old Password</label>
             <div className="flex items-center gap-2">
             <input
             onChange={handleChange}
