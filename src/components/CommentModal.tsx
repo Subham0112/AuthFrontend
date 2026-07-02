@@ -4,6 +4,7 @@ import { HiX } from "react-icons/hi";
 import axios from "axios";
 import type { AlertData } from "./Alert";
 import { UserDataContext } from "../context/userContext";
+import api from "../lib/axiosInstance";
 
 interface CommentData {
   id: number;
@@ -57,9 +58,8 @@ const CommentModal = ({ postId, setAlert, onCommentAdded, onCommentDelete, onClo
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_API}/get-comments/${postId}`,
-          { withCredentials: true }
+        const res = await api.get(
+          `/get-comments/${postId}`
         );
         setComments(res.data.comments);
       } catch (err) {
@@ -75,10 +75,9 @@ const CommentModal = ({ postId, setAlert, onCommentAdded, onCommentDelete, onClo
     if (!newComment.trim()) return;
     setSubmitting(true);
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API}/post-comment`,
-        { comment: newComment, post_id: postId },
-        { withCredentials: true }
+      const res = await api.post(
+        `/post-comment`,
+        { comment: newComment, post_id: postId }
       );
       setComments((prev) => [...prev, res.data.comment]);
       setAlert({ type: "success", title: "Comment Posted", message: res.data.message });
@@ -94,9 +93,8 @@ const CommentModal = ({ postId, setAlert, onCommentAdded, onCommentDelete, onClo
 
   const handleDeleteComment = async (id: number) => {
     try {
-      const deleteComment = await axios.delete(
-        `${import.meta.env.VITE_BACKEND_API}/delete-comment/${id}`,
-        { withCredentials: true }
+      const deleteComment = await api.delete(
+        `/delete-comment/${id}`
       );
       setComments((prev) => prev.filter((comment) => comment.id !== id));
       if (deleteComment.status === 200) {

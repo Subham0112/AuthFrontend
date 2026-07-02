@@ -84,7 +84,6 @@ const handleSubmit =async ()=>{
         await context?.refreshUser();
         console.log("logged in successfully");
         navigate("/dashboard", { replace: true });
-        console.log(res.data.user)
     }catch(err){
              if (axios.isAxiosError(err)) {
                 const data = err.response?.data

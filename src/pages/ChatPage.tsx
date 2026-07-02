@@ -1,10 +1,15 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { io } from "socket.io-client"
-import axios from 'axios'
-import { BsArrowLeft, BsSendFill } from 'react-icons/bs'
-import Navbar from '../components/Navbar'
-import { UserDataContext } from '../context/userContext'
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { io } from "socket.io-client";
+import axios from "axios";
+import api from "../lib/axiosInstance";
+import { BsArrowLeft, BsSendFill } from "react-icons/bs";
+import { FaRegTrashAlt } from "react-icons/fa";
+import { HiDotsVertical } from "react-icons/hi";
+
+import Navbar from "../components/Navbar";
+import { UserDataContext } from "../context/userContext";
+import type { AlertData } from "../components/Alert";
 
 interface MessageData {
   id: number;
@@ -22,271 +27,578 @@ interface OtherUser {
   profile_url?: string | null;
 }
 
-const socket = io(import.meta.env.VITE_BACKEND_API, { withCredentials: true })
-const getInitials = (name?: string) => name?.slice(0, 2).toUpperCase() || "?"
+const socket = io(import.meta.env.VITE_BACKEND_API, { withCredentials: true });
+const getInitials = (name?: string) => name?.slice(0, 2).toUpperCase() || "?";
 
 const HeaderAvatar = ({ user }: { user: OtherUser | null }) => {
   if (user?.profile_url) {
-    return <img src={user.profile_url} alt={user.user_name} className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-100" />
+    return (
+      <img
+        src={user.profile_url}
+        alt={user.user_name}
+        className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-100"
+      />
+    );
   }
   return (
     <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 bg-sky-100 text-sky-600">
       {getInitials(user?.user_name)}
     </div>
-  )
-}
+  );
+};
 
-const ChatPage = () => {
-  const { userId } = useParams()
-  const otherUserId = Number(userId)
-  const navigate = useNavigate()
-  const context = useContext(UserDataContext)
-  const currentUserId = context?.user?.id
-  const currentUser = context?.user
+const ChatPage = ({
+  setAlert,
+}: {
+  setAlert: React.Dispatch<React.SetStateAction<AlertData | null>>;
+}) => {
+  const { userId } = useParams();
+  const otherUserId = Number(userId);
+  const navigate = useNavigate();
+  const context = useContext(UserDataContext);
+  const currentUserId = context?.user?.id;
+  const currentUser = context?.user;
 
-  const [messages, setMessages] = useState<MessageData[]>([])
-  const [otherUser, setOtherUser] = useState<OtherUser | null>(null)
-  const [newMessage, setNewMessage] = useState<string>("")
-  const [loading, setLoading] = useState<boolean>(true)
-  const [typing, setTyping] = useState<boolean>(false)
-  const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(null)
 
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const bottomRef = useRef<HTMLDivElement | null>(null)
-  const currentUserIdRef = useRef<number | undefined>(currentUserId)
+  const [messages, setMessages] = useState<MessageData[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
+  const [newMessage, setNewMessage] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [typing, setTyping] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+const [loadingOlder, setLoadingOlder] = useState<boolean>(false);
+  const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(
+    null,
+  );
 
-  // Keep ref always current
-  useEffect(() => {
-    currentUserIdRef.current = currentUserId
-  }, [currentUserId])
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadingOlderRef = useRef(false);
+  const shouldScrollToBottomRef = useRef(true);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
+  const currentUserIdRef = useRef<number | undefined>(currentUserId);
+  const oldestIdRef = useRef<number | null>(null);
+  const pendingScrollRestoreRef = useRef<{ height: number; scrollTop: number } | null>(null);
 
-  // Fetch other user info
-  useEffect(() => {
-    if (!otherUserId) return
-    axios.get(`${import.meta.env.VITE_BACKEND_API}/user/${otherUserId}`, { withCredentials: true })
-      .then(res => setOtherUser(res.data.user))
-      .catch(err => console.log("Error fetching user", err))
-  }, [otherUserId])
-
-  
-  useEffect(() => {
-    if (!otherUserId || !currentUserId) return
-
-    setLoading(true)
-    setMessages([])
-    setLastReadMessageId(null)
-
-    axios.get(`${import.meta.env.VITE_BACKEND_API}/message/${otherUserId}`, { withCredentials: true })
-      .then(res => {
-        const fetched: MessageData[] = res.data.data
-        setMessages(fetched)
-
-        const lastRead = [...fetched].reverse().find(
-          (m) => m.sender_id === currentUserId && m.is_read === true
-        )
-        if (lastRead) setLastReadMessageId(lastRead.id)
-      })
-      .catch(err => console.log("Error fetching messages", err))
-      .finally(() => setLoading(false))
-  }, [otherUserId, currentUserId])  
-  useEffect(() => {
-    if (!otherUserId || !currentUserId) return
-
-    axios.patch(
-      `${import.meta.env.VITE_BACKEND_API}/messages/${otherUserId}/read`,
-      {},
-      { withCredentials: true }
-    ).then(() => {
-      socket.emit("messages_read", {
-        readerId: currentUserId,
-        senderId: otherUserId,
-      })
-    }).catch(err => console.log("Error marking read", err))
-  }, [otherUserId, currentUserId])
+useEffect(() => {
+  oldestIdRef.current =
+    messages.length > 0 ? messages[0].id : null;
+}, [messages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
+
+  useEffect( () => {
+    if (!otherUserId) return;
+    api.get(`/user/${otherUserId}`)
+      .then((res) => setOtherUser(res.data.user))
+      .catch((err) => console.log("Error fetching user", err));
+  }, [otherUserId]);
+
+useEffect(() => {
+  if (!otherUserId || !currentUserId) return;
+
+  const fetchLatestMessages = async () => {
+    setLoading(true);
+    setMessages([]);
+    setLastReadMessageId(null);
+    setHasMore(true);
+
+    try {
+      const res = await api.get(
+        `/message/${otherUserId}`
+      );
+
+      const fetched: MessageData[] = res.data.data;
+
+     setMessages(fetched);
+      setHasMore(res.data.hasMore);
+      shouldScrollToBottomRef.current = true;
+
+      const lastRead = [...fetched]
+        .reverse()
+        .find(
+          (m) =>
+            m.sender_id === currentUserId &&
+            m.is_read
+        );
+
+      if (lastRead) {
+        setLastReadMessageId(lastRead.id);
+      }
+
+    }catch(err){
+      console.log("Error Fetching Messages", err)
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchLatestMessages();
+
+}, [otherUserId, currentUserId]);
+
+const loadOlderMessages = useCallback(async () => {
+  if (
+    loadingOlderRef.current ||
+    loading ||
+    !hasMore ||
+    messages.length === 0
+  ) {
+    return;
+  }
+
+  loadingOlderRef.current = true;
+  setLoadingOlder(true);
+
+  const div = messageContainerRef.current;
+  if (!div) {
+    loadingOlderRef.current = false;
+    setLoadingOlder(false);
+    return;
+  }
+
+  const previousHeight = div.scrollHeight;
+  const previousScrollTop = div.scrollTop;
+
+  try {
+    const oldestId = oldestIdRef.current;
+
+    const res = await api.get(
+      `/message/${otherUserId}?before=${oldestId}`
+    );
+ 
+    const olderMessages: MessageData[] = res.data.data;
+    shouldScrollToBottomRef.current = false;
+
+    pendingScrollRestoreRef.current = {
+      height: previousHeight,
+      scrollTop: previousScrollTop,
+    };
+
+    setMessages((prev) => {
+      const existingIds = new Set(prev.map((m) => m.id));
+
+      const uniqueOlder = olderMessages.filter(
+        (m) => !existingIds.has(m.id)
+      );
+
+      return [...uniqueOlder, ...prev];
+    });
+
+    setHasMore(res.data.hasMore);
+  } catch (err) {
+    console.log(err);
+  } finally {
+    loadingOlderRef.current = false;
+    setLoadingOlder(false);
+  }
+}, [messages, hasMore, loading, otherUserId]);
+
+useLayoutEffect(() => {
+  const pending = pendingScrollRestoreRef.current;
+  if (!pending) return;
+
+  const el = messageContainerRef.current;
+  if (!el) {
+    pendingScrollRestoreRef.current = null;
+    return;
+  }
+
+  const newHeight = el.scrollHeight;
+  el.scrollTop = pending.scrollTop + (newHeight - pending.height);
+  pendingScrollRestoreRef.current = null;
+}, [messages]);
+
+useEffect(() => {
+  const div = messageContainerRef.current;
+
+  if (!div) return;
+
+  const handleScroll = () => {
+    const isScrollable = div.scrollHeight > div.clientHeight + 10;
+    if (
+      isScrollable &&
+      div.scrollTop <= 20 &&
+      hasMore &&
+      !loadingOlderRef.current
+    ) {
+      loadOlderMessages();
+    }
+  };
+
+  div.addEventListener("scroll", handleScroll);
+
+  return () => {
+    div.removeEventListener("scroll", handleScroll);
+  };
+}, [hasMore, loadOlderMessages]);
+
+useEffect(() => {
+  if (loading) return;
+
+  const container = messageContainerRef.current;
+  if (!container) return;
+
+  if (!shouldScrollToBottomRef.current) {
+    shouldScrollToBottomRef.current = true;
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    container.scrollTop = container.scrollHeight;
+  });
+}, [loading, messages]);
 
   useEffect(() => {
-    if (!currentUserId) return
+    if (!currentUserId) return;
 
-    socket.emit("join", currentUserId)
+    socket.emit("join", currentUserId);
 
     socket.on("receive_message", (message: MessageData) => {
       const isCurrentConversation =
-        (message.sender_id === otherUserId && message.receiver_id === currentUserId) ||
-        (message.sender_id === currentUserId && message.receiver_id === otherUserId)
+        (message.sender_id === otherUserId &&
+          message.receiver_id === currentUserId) ||
+        (message.sender_id === currentUserId &&
+          message.receiver_id === otherUserId);
 
-      if (!isCurrentConversation) return
+      if (!isCurrentConversation) return;
+      shouldScrollToBottomRef.current = true;
 
-      setMessages(prev => [...prev, message])
+      setMessages((prev) => [...prev, message]);
 
       if (message.sender_id === otherUserId) {
-        axios.patch(
-          `${import.meta.env.VITE_BACKEND_API}/messages/${otherUserId}/read`,
-          {},
-          { withCredentials: true }
-        ).then(() => {
-          socket.emit("messages_read", {
-            readerId: currentUserId,
-            senderId: otherUserId,
+        axios
+          .patch(
+            `${import.meta.env.VITE_BACKEND_API}/messages/${otherUserId}/read`,
+            {},
+            { withCredentials: true },
+          )
+          .then(() => {
+            socket.emit("messages_read", {
+              readerId: currentUserId,
+              senderId: otherUserId,
+            });
           })
-        }).catch(() => {})
+          .catch(() => {});
       }
-    })
+    });
 
     socket.on("messages_read", () => {
-      const uid = currentUserIdRef.current
-      if (!uid) return
-
-      setMessages(prev => {
-        const lastSent = [...prev].reverse().find(m => m.sender_id === uid)
+      const uid = currentUserIdRef.current;
+      if (!uid) return;
+      setMessages((prev) => {
+        const lastSent = [...prev].reverse().find((m) => m.sender_id === uid);
         if (lastSent) {
-          setLastReadMessageId(lastSent.id)
-          return prev.map(m => m.sender_id === uid ? { ...m, is_read: true } : m)
+          setLastReadMessageId(lastSent.id);
+          return prev.map((m) =>
+            m.sender_id === uid ? { ...m, is_read: true } : m,
+          );
         }
-        return prev
-      })
-    })
+        return prev;
+      });
+    });
 
     socket.on("user_typing", (data) => {
-      if (data.senderId === otherUserId) setTyping(true)
-    })
+      if (data.senderId === otherUserId) setTyping(true);
+    });
 
     socket.on("user_stop_typing", (data) => {
-      if (data.senderId === otherUserId) setTyping(false)
-    })
+      if (data.senderId === otherUserId) setTyping(false);
+    });
+    socket.on("message_deleted", ({ messageId }) => {
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    });
+
+    axios
+      .patch(
+        `${import.meta.env.VITE_BACKEND_API}/messages/${otherUserId}/read`,
+        {},
+        { withCredentials: true },
+      )
+      .then(() => {
+        socket.emit("messages_read", {
+          readerId: currentUserId,
+          senderId: otherUserId,
+        });
+      })
+      .catch((err) => console.log("Error marking read", err));
 
     return () => {
-      socket.off("receive_message")
-      socket.off("messages_read")
-      socket.off("user_typing")
-      socket.off("user_stop_typing")
+      socket.off("receive_message");
+      socket.off("messages_read");
+      socket.off("user_typing");
+      socket.off("user_stop_typing");
+      socket.off("message_deleted");
+    };
+  }, [currentUserId, otherUserId]);
+
+  useEffect(() => {
+  if (openMenuId === null) return
+
+  const handleClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.msg-menu')) {
+      setOpenMenuId(null)
     }
-  }, [currentUserId, otherUserId])
-
-  if (!context) return null
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMessage(e.target.value)
-    socket.emit("typing", { senderId: currentUserId, receiverId: otherUserId })
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
-    typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("stop_typing", { senderId: currentUserId, receiverId: otherUserId })
-    }, 1000)
   }
 
+  document.addEventListener('mousedown', handleClickOutside)
+  return () => document.removeEventListener('mousedown', handleClickOutside)
+}, [openMenuId])
+
+  if (!context) return null;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    socket.emit("typing", { senderId: currentUserId, receiverId: otherUserId });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stop_typing", {
+        senderId: currentUserId,
+        receiverId: otherUserId,
+      });
+    }, 1000);
+  };
+
+  
+
   const handleSend = async () => {
-    if (!newMessage.trim()) return
+    if (!newMessage.trim()) return;
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API}/message`,
-        { message: newMessage, recieverId: otherUserId },
-        { withCredentials: true }
-      )
-      setMessages(prev => [...prev, res.data.data])
+      const res = await api.post(
+        `/message`,
+        { message: newMessage, recieverId: otherUserId }
+      );
+        shouldScrollToBottomRef.current = true;
+      setMessages((prev) => [...prev, res.data.data]);
       socket.emit("send_message", {
         senderId: currentUserId,
         receiverId: otherUserId,
         message: newMessage,
-      })
-      setNewMessage("")
+      });
+      setNewMessage("");
     } catch (err) {
-      console.log("Error sending message", err)
+      console.log("Error sending message", err);
     }
-  }
+  };
+  const handleMsgDelete = async (id: number) => {
+    try {
+      const deleteMsg = await api.delete(
+        `/delete-message/${id}`
+      );
+      setMessages((prev) => prev.filter((msg) => msg.id !== id));
+      setAlert({
+        type: "success",
+        title: "Message Deleted",
+        message: deleteMsg.data.message,
+      });
+      console.log(deleteMsg.data.message);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const errData = err.response?.data;
+        if (errData?.message) {
+          setAlert({
+            type: "error",
+            title: "Message Delete Failed",
+            message: errData.message,
+          });
+          console.log(errData.message);
+        }
+      } else {
+        setAlert({
+          type: "error",
+          title: "Message Delete Failed",
+          message: "Unable to Delete Message",
+        });
+        console.log("Unable to Delete Message");
+      }
+    }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSend()
-  }
+    if (e.key === "Enter") handleSend();
+  };
 
-  const BubbleAvatar = () => (
+  const BubbleAvatar = () =>
     otherUser?.profile_url ? (
-      <img src={otherUser.profile_url} alt={otherUser.user_name} className="w-6 h-6 rounded-full object-cover flex-shrink-0 border border-slate-100 self-end mb-1" />
+      <img
+        src={otherUser.profile_url}
+        alt={otherUser.user_name}
+        className="w-6 h-6 rounded-full object-cover flex-shrink-0 border border-slate-100 self-end mb-1"
+      />
     ) : (
       <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold flex-shrink-0 self-end mb-1 bg-sky-100 text-sky-600">
         {getInitials(otherUser?.user_name)}
       </div>
-    )
-  )
+    );
 
-  const myMessages = messages.filter(m => m.sender_id === currentUserId)
-  const lastSentId = myMessages.length > 0 ? myMessages[myMessages.length - 1].id : null
+  const myMessages = messages.filter((m) => m.sender_id === currentUserId);
+  const lastSentId =
+    myMessages.length > 0 ? myMessages[myMessages.length - 1].id : null;
 
   return (
     <div className="min-h-screen bg-[#F8F9FB] flex flex-col">
       <Navbar />
-      <div className="max-w-[600px] w-full mx-auto pt-6 pb-8 px-4 flex flex-col flex-1">
-        <div className="flex flex-col flex-1 rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-
+      <div
+     
+      className="max-w-[600px] w-full mx-auto pt-6 pb-8 px-4 flex flex-col flex-1">
+        <div className="flex flex-col h-[75vh] rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
           {/* Header */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-            <button onClick={() => navigate("/messages")} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all">
+            <button
+              onClick={() => navigate("/messages")}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+            >
               <BsArrowLeft size={16} />
             </button>
             <HeaderAvatar user={otherUser} />
             <div className="flex-1 min-w-0">
-              <p onClick={() => navigate(`/users/${otherUserId}`)} className="text-sm font-semibold text-slate-800 truncate cursor-pointer hover:text-indigo-600 transition-colors">
+              <p
+                onClick={() => navigate(`/users/${otherUserId}`)}
+                className="text-sm font-semibold text-slate-800 truncate cursor-pointer hover:text-indigo-600 transition-colors"
+              >
                 {otherUser?.user_name || "..."}
               </p>
-              {typing && <p className="text-[11px] text-indigo-400 font-medium">typing...</p>}
+              {typing && (
+                <p className="text-[11px] text-indigo-400 font-medium">
+                  typing...
+                </p>
+              )}
             </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-1 min-h-[50vh] max-h-[60vh]">
+          <div className="relative flex-1 min-h-0">
+            {loadingOlder && (
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                <div className="flex items-center gap-2 text-xs text-slate-500 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm border border-slate-100">
+                  <span className="h-3.5 w-3.5 rounded-full border-2 border-slate-300 border-t-indigo-400 animate-spin" />
+                  Loading older messages...
+                </div>
+              </div>
+            )}
+            <div
+           ref={messageContainerRef}
+          className="h-full overflow-y-auto px-5 py-5 space-y-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {loading ? (
               <div className="flex flex-col gap-3 mt-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"} animate-pulse`}>
-                    <div className={`h-9 rounded-2xl bg-slate-100 ${i % 2 === 0 ? "w-40" : "w-52"}`} />
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"} animate-pulse`}
+                  >
+                    <div
+                      className={`h-9 rounded-2xl bg-slate-100 ${i % 2 === 0 ? "w-40" : "w-52"}`}
+                    />
                   </div>
                 ))}
               </div>
             ) : messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full pt-10 gap-2">
-                <p className="text-sm font-medium text-slate-500">No messages yet</p>
-                <p className="text-xs text-slate-400">Say hello to {otherUser?.user_name}!</p>
+                <p className="text-sm font-medium text-slate-500">
+                  No messages yet
+                </p>
+                <p className="text-xs text-slate-400">
+                  Say hello to {otherUser?.user_name}!
+                </p>
               </div>
             ) : (
-              messages.map(msg => {
-                const isOwn = msg.sender_id === currentUserId
-                const isLastSent = isOwn && msg.id === lastSentId
-                const isLastRead = isOwn && msg.id === lastReadMessageId
-
+              <>
+                {messages.map((msg) => {
+                const isOwn = msg.sender_id === currentUserId;
+                const isLastSent = isOwn && msg.id === lastSentId;
+                const isLastRead = isOwn && msg.id === lastReadMessageId;
                 return (
-                  <div key={msg.id} className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
-                    <div className={`flex items-end gap-1.5 ${isOwn ? "justify-end" : "justify-start"} w-full`}>
-                      {!isOwn && <BubbleAvatar />}
-                      <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-sm ${isOwn ? "bg-indigo-500 text-white rounded-br-sm" : "bg-slate-100 text-slate-800 rounded-bl-sm"}`}>
-                        <p className="whitespace-pre-wrap break-words break-all leading-relaxed">{msg.messages}</p>
-                        <span className={`block text-[10px] mt-1 ${isOwn ? "text-indigo-200" : "text-slate-400"} text-right`}>
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  <div
+                    key={msg.id}
+                    className={`flex group flex-col ${isOwn ? "items-end" : "items-start"}`}
+                  >
+                    <div
+                      className={`flex items-center gap-1 ${isOwn ? "justify-end" : "justify-start"} w-full`}
+                    >
+                    {!isOwn && <BubbleAvatar />}
+                    {isOwn &&
+                    <span className="msg-menu flex items-center gap-1" >
+                     {openMenuId === msg.id &&
+                      <span 
+                          onClick={() => {
+                          handleMsgDelete(msg.id);
+                          setOpenMenuId(null);
+                        }}
+                      className="px-7 cursor-pointer py-2 bg-slate-300 text-red-600 text-xs flex gap-3">
+
+                      <FaRegTrashAlt
+                        className="text-red-600 "
+                      
+                      />
+                      Delete Message
+                      </span>
+                    }
+                      <span
+                        className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-100"
+                        onClick={() =>
+                          setOpenMenuId((prev) =>
+                            prev === msg.id ? null : msg.id,
+                          )
+                        }
+                      >
+                        <HiDotsVertical />
+                      </span>
+
+                      </span>}
+
+                      <div
+                        className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-sm ${isOwn ? "bg-indigo-500 text-white rounded-br-sm" : "bg-slate-100 text-slate-800 rounded-bl-sm"}`}
+                      >
+                        <div
+                          className={`flex ${isOwn ? "flex-row-reverse" : "flex-row"} gap-5`}
+                        >
+                          <p className="whitespace-pre-wrap break-words break-all leading-relaxed">
+                            {msg.messages}
+                          </p>
+                        </div>
+                        <span
+                          className={`block text-[10px] mt-1 ${isOwn ? "text-indigo-200" : "text-slate-400"} text-right`}
+                        >
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                     </div>
 
-                    
                     {isOwn && (isLastRead || isLastSent) && (
                       <div className="flex items-center mt-0.5 mr-1 h-3.5">
-                        {isLastRead
-                          ? <span className="text-[10px] text-indigo-400 font-medium">Seen</span>
-                          : <span className="text-[10px] text-slate-400">Sent</span>
-                        }
+                        {isLastRead ? (
+                          <span className="text-[10px] text-indigo-400 font-medium">
+                            Seen
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400">
+                            Sent
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
-                )
-              })
+                );
+              })}
+              </>
             )}
-            <div ref={bottomRef} />
+            </div>
           </div>
 
           {/* Input */}
           <div className="flex items-center gap-2.5 px-4 py-3.5 border-t border-slate-100">
             {currentUser?.profile_url ? (
-              <img src={currentUser.profile_url} alt={currentUser.user_name} className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-slate-100" />
+              <img
+                src={currentUser.profile_url}
+                alt={currentUser.user_name}
+                className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-slate-100"
+              />
             ) : (
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 bg-sky-100 text-sky-600">
                 {getInitials(currentUser?.user_name)}
@@ -309,11 +621,10 @@ const ChatPage = () => {
               <BsSendFill size={14} />
             </button>
           </div>
-
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ChatPage
+export default ChatPage;

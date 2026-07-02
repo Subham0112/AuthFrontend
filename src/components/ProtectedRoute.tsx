@@ -1,29 +1,60 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import {UserDataContext} from "../context/userContext";
-interface ProtectedProp{
-    children:React.ReactNode;
-    allowedRoles:("user"|"admin"|"sudoadmin")[];
-    redirectTo?: string;  
+import api from "../lib/axiosInstance";
+import { UserDataContext } from "../context/userContext";
 
+interface ProtectedProps {
+  children: React.ReactNode;
+  allowedRoles: ("user" | "admin" | "sudoadmin")[];
+  redirectTo?: string;
 }
-const ProtectectedRoute=({children,allowedRoles,redirectTo = "/login"}:ProtectedProp)=>{
-
-const context = useContext(UserDataContext);
-if (!context) return null;
-const { user,loading } = context;
-
-if(loading){
-    return <div>Loading...</div>
-}
-
-if(!user.role){
-    return <Navigate to={redirectTo} />
-}
-if(allowedRoles.includes(user.role)){
-return <>{children}</>
-}
-return <Navigate to="/login" />
+interface UsersData {
+  id: number;
+  email: string;
+  role: "user" | "admin" | "sudoadmin" | null;
+  user_name: string;
+  profile_url: string | null;
 }
 
-export default ProtectectedRoute;
+const ProtectedRoute = ({
+  children,
+  allowedRoles,
+  redirectTo = "/login",
+}: ProtectedProps) => {
+
+  const context = useContext(UserDataContext);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const verifySession = async () => {
+        if (!context) return ;
+  const {setUser,  sessionExpire } = context;
+      try {
+        const res = await api.get("/profile");
+        setUser(res.data.user);
+      } catch (err) {
+        sessionExpire();
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+
+    verifySession();
+  }, []);
+if (!context) {
+    return null;
+  }
+  const { user } = context;
+
+  if (checkingAuth) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user.role) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+export default ProtectedRoute;

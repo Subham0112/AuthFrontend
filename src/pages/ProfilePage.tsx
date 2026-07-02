@@ -1,15 +1,17 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FaRegThumbsUp, FaThumbsUp, FaRegComment } from "react-icons/fa";
-import { BsChatDots } from "react-icons/bs";
+import { FaRegThumbsUp, FaThumbsUp, FaRegComment,FaCheck } from "react-icons/fa";
+import { BsChatDots,BsFillPersonCheckFill,BsFillPersonXFill } from "react-icons/bs";
+import { ImCross } from "react-icons/im";
+import api from "../lib/axiosInstance";
 import axios from "axios";
 import CommentModal from "../components/CommentModal";
 import LikeModal from "../components/LikeModal";
 import type { AlertData } from "../components/Alert";
 import Navbar from "../components/Navbar";
-import { BsGlobe, BsLock } from "react-icons/bs";
+import { BsGlobe, BsLock, BsPersonFillAdd } from "react-icons/bs";
 import { UserDataContext } from "../context/userContext";
-import { RiUser3Line } from "react-icons/ri";
+import skeletonProfile from "../assets/img/skeleton_profile.jpg";
 
 interface Media {
   media_id: number;
@@ -38,50 +40,7 @@ export interface PostData {
   likedByCurrentUser: boolean;
 }
 
-const getInitials = (name?: string) =>
-  name ? name.slice(0, 2).toUpperCase() : "U";
 
-const ProfileAvatar = ({
-  user,
-  large = false,
-}: {
-  user?: UserData | null;
-  large?: boolean;
-}) => {
-  if (large) {
-    
-    return user?.profile_url ? (
-      <img
-        src={user.profile_url}
-        alt={user.user_name}
-        className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md"
-      />
-    ) : (
-      <div className="w-20 h-20 rounded-2xl bg-indigo-100 border-4 border-white shadow-md flex items-center justify-center">
-        {user?.user_name ? (
-          <span className="text-indigo-600 text-2xl font-bold">
-            {getInitials(user.user_name)}
-          </span>
-        ) : (
-          <RiUser3Line size={36} className="text-indigo-300" />
-        )}
-      </div>
-    );
-  }
-  return user?.profile_url ? (
-    <img
-      src={user.profile_url}
-      alt={user.user_name}
-      className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-100"
-    />
-  ) : (
-    <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-      <span className="text-indigo-600 text-xs font-bold">
-        {getInitials(user?.user_name)}
-      </span>
-    </div>
-  );
-};
 
 const ProfilePage = ({
   setAlert,
@@ -94,20 +53,20 @@ const ProfilePage = ({
   const [profileUser, setProfileUser] = useState<UserData | null>(null);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [likesPostId, setLikesPostId] = useState<number | null>(null);
+  const [friendStatus, setFriendStatus] = useState<string>("none");
 
   const navigate = useNavigate();
   const context = useContext(UserDataContext);
-  const { userId } = useParams();
-  const user_id = Number(userId);
+  const { otherUserId } = useParams();
+  const user_id = Number(otherUserId);
 
   const isOwnProfile = context?.user?.id === user_id;
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_API}/user/${userId}`,
-          { withCredentials: true }
+        const res = await api.get(
+          `/user/${user_id}`
         );
         setProfileUser(res.data.user);
       } catch (err) {
@@ -116,27 +75,37 @@ const ProfilePage = ({
     };
     const fetchUserPosts = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_API}/get-post/${user_id}`,
-          { withCredentials: true }
+        const res = await api.get(
+          `/get-post/${user_id}`
         );
         setPosts(res.data.posts);
       } catch (err) {
         console.log("Error fetching posts", err);
       }
     };
-    if (userId) {
+    const fetchUserFriedsStatus= async () => {
+      try {
+        const res = await api.get(
+          `/friend-status/${user_id}`
+        );
+        setFriendStatus(res.data.status);
+        console.log(friendStatus);
+      } catch (err) {
+        console.log("Error fetching friend status", err);
+      }
+    }
+    if (otherUserId) {
       fetchUser();
       fetchUserPosts();
+      fetchUserFriedsStatus();
     }
-  }, [userId]);
+  }, [otherUserId]);
 
   const handleLikeToggle = async (postId: number) => {
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API}/toggle-like/${postId}`,
-        {},
-        { withCredentials: true }
+      const res = await api.post(
+        `/toggle-like/${postId}`,
+        {}
       );
       setPosts((prev) =>
         prev.map((post) => {
@@ -156,33 +125,261 @@ const ProfilePage = ({
 
   const totalLikes = posts.reduce((sum, post) => sum + post.likeCount, 0);
 
+
+  const handleAddClick = async (otherUserId: number) => {
+    try {
+      const res = await api.post(
+        `/add-friend/${otherUserId}`,
+        {}
+      );
+      if (res.status === 200) {
+        setFriendStatus("pending_sent");
+        setAlert({
+          type: "success",
+          title:"Request Sent",
+          message: res.data.message || "Friend request sent successfully.",
+        });
+      }
+    } catch (err) {
+      if(axios.isAxiosError(err)){
+        const data = err.response?.data;
+        if(data?.message){
+          setAlert({
+            type: "error",
+            title:"Request Failed",
+            message: data.message,
+          });
+             console.log("Error sending friend request", data.message);  
+            return;
+            }
+      }
+      console.log("Error sending friend request", err);
+      setAlert({
+        type: "error",
+        title:"Request Failed",
+        message: "Failed to send friend request.",
+      });
+    }
+  };
+
+  const handleCancelRequest = async (otherUserId: number) => {
+    try {
+      const res = await api.delete(
+        `/request-cancel/${otherUserId}`
+      );
+      if (res.status === 200) {
+        setFriendStatus("none");
+        setAlert({
+          type: "success",
+          title:"Request Canceled",
+          message: "Friend request canceled successfully.",
+        });
+      }
+    } catch (err) {
+      if(axios.isAxiosError(err)){
+        const data = err.response?.data;
+        if(data?.message){
+          setAlert({
+            type: "error",
+            title:"Cancel Request Failed",
+            message: data.message,
+          });
+             console.log("Error canceling friend request", data.message);  
+            return;
+            }
+      }
+      console.log("Error canceling friend request", err);
+      setAlert({
+        type: "error",
+        title:"Cancel Request Failed",
+        message: "Failed to cancel friend request.",
+      });
+    }
+  };
+
+  const handleAcceptRequest = async (otherUserId: number) => {
+    try {
+      const res = await api.patch(
+        `/accept-request/${otherUserId}`,
+        {}
+      );
+      if (res.status === 200) {
+        setFriendStatus("friends");
+        setAlert({
+          type: "success",
+          title:"Request Accepted",
+          message: "Friend request accepted successfully.",
+        });
+      }
+    } catch (err) {
+      if(axios.isAxiosError(err)){
+        const data = err.response?.data;
+        if(data?.message){
+          setAlert({
+            type: "error",
+            title:"Accept Request Failed",
+            message: data.message,
+          });
+             console.log("Error accepting friend request", data.message);  
+            return;
+            }
+      }
+      console.log("Error accepting friend request", err);
+      setAlert({
+        type: "error",
+        title:"Accept Request Failed",
+        message: "Failed to accept friend request.",
+      });
+    }
+  };
+  const handleRejectRequest = async (otherUserId: number) => {
+    try {
+      const res = await api.delete(
+        `/delete-request/${otherUserId}`
+      );
+      if (res.status === 200) {
+        setFriendStatus("none");
+        setAlert({
+          type: "success",
+          title:"Request Rejected",
+          message: "Friend request rejected successfully.",
+        });
+      }
+    } catch (err) {
+      if(axios.isAxiosError(err)){
+        const data = err.response?.data;
+        if(data?.message){
+          setAlert({
+            type: "error",
+            title:"Reject Request Failed",
+            message: data.message,
+          });
+             console.log("Error rejecting friend request", data.message);  
+            return;
+            }
+      }
+      console.log("Error rejecting friend request", err);
+      setAlert({
+        type: "error",
+        title:"Reject Request Failed",
+        message: "Failed to reject friend request.",
+      });
+    }
+  };
+
+  const handleUnfriend = async (otherUserId: number) => {
+    try {
+      const res = await api.delete(
+        `/unfriend/${otherUserId}`
+      );
+      if (res.status === 200) {
+        setFriendStatus("none");
+        setAlert({
+          type: "success",
+          title:"Unfriended",
+          message: "You have unfriended this user.",
+        });
+      }
+    } catch (err) {
+      if(axios.isAxiosError(err)){
+        const data = err.response?.data;
+        if(data?.message){
+          setAlert({
+            type: "error",
+            title:"Unfriend Failed",
+            message: data.message,
+          });
+             console.log("Error unfriending user", data.message);  
+            return;
+            }
+      }
+      console.log("Error unfriending user", err);
+      setAlert({
+        type: "error",
+        title:"Unfriend Failed",
+        message: "Failed to unfriend this user.",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F9FB]">
       <Navbar />
 
       <div className="max-w-[680px] mx-auto px-4 pt-8 pb-16">
 
-        {/* ── Profile Card ── */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
           <div className="h-24 bg-gradient-to-r from-indigo-100 via-violet-50 to-sky-100" />
 
           <div className="px-6 pb-6">
-            {/* Avatar + action row */}
-            <div className="flex items-end justify-between -mt-10 mb-4">
-              <ProfileAvatar user={profileUser} large />
+            <div className="flex items-end justify-between -mt-8 mb-4">
+              <img
+              src={profileUser?.profile_url || skeletonProfile }
+              alt={profileUser?.user_name}
+              className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md"
+               />
 
               {!isOwnProfile && (
+                <div className="flex flex-col mt-10 gap-2 w-40">
                 <button
                   onClick={() => navigate(`/messages/${user_id}`)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-700 text-white text-sm font-semibold shadow-sm transition-all duration-150"
+                  className="w-[80%] flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-700 text-white text-sm font-semibold shadow-sm transition-all duration-150"
                 >
                   <BsChatDots size={15} />
                   Message
                 </button>
+                {friendStatus === "none" &&
+                <button
+                 onClick={()=>{
+                  handleAddClick(user_id)
+                 }}
+                  className="w-[80%] flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-400 text-white text-sm font-semibold shadow-sm transition-all duration-150"
+                >
+                  <BsPersonFillAdd size={15} />
+                  Add Friend
+                </button>}
+                {friendStatus === "pending_sent" &&
+                <button
+                 onClick={()=>{
+                  handleCancelRequest(user_id)
+                 }}
+                  className="w-full flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-400 hover:bg-slate-300 text-white text-sm font-semibold shadow-sm transition-all duration-150"
+                >
+                  <BsFillPersonXFill size={15} />
+                  Cancel Request
+                </button>}
+                   {friendStatus === "pending_received" &&
+                   <div className="flex flex-col gap-2">
+                <button
+                 onClick={() => handleAcceptRequest(user_id)}
+                  className="w-full flex items-center gap-2 px-4 py-2 rounded-xl bg-green-400 hover:bg-green-300 text-white text-sm font-semibold shadow-sm transition-all duration-150"
+                >
+                  <FaCheck size={15} />
+                  Accept Request
+                </button>
+                  <button
+                 onClick={() => handleRejectRequest(user_id)}
+                  className="w-full flex items-center gap-2 px-4 py-2 rounded-xl bg-red-400 hover:bg-red-300 text-white text-sm font-semibold shadow-sm transition-all duration-150"
+                >
+                  <ImCross size={15} />
+                  Reject Request
+                </button>
+                </div>
+                
+                }
+                {friendStatus === "friends" &&
+                <button
+                  onClick={() => handleUnfriend(user_id)}
+                  className="w-[80%] flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-400 text-white text-sm font-semibold shadow-sm transition-all duration-150"
+                >
+                  <BsFillPersonCheckFill size={15} />
+                  Unfriend
+                </button>}
+             
+                </div>
               )}
             </div>
 
-            {/* Name + email */}
             <div className="mb-5">
               <h2 className="text-xl font-bold text-slate-800">
                 {profileUser?.user_name || "User"}
@@ -224,7 +421,11 @@ const ProfilePage = ({
                 {/* Post header */}
                 <div className="px-5 pt-5 pb-3 flex items-center gap-3">
                   {/* Shows the profile-page user's photo on every post */}
-                  <ProfileAvatar user={profileUser} />
+                  <img
+                  src={profileUser?.profile_url || skeletonProfile }
+                  alt={profileUser?.user_name}
+                  className="w-12 h-12 rounded-full object-cover border-4 border-white shadow-md"
+               />
                   <div>
                     <p className="text-sm font-semibold text-slate-800">
                       {post.users?.user_name}

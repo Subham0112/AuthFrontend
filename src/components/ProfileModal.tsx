@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import api from "../lib/axiosInstance";
 import { HiOutlinePhotograph, HiX } from "react-icons/hi";
 import { RiUser3Line } from "react-icons/ri";
 import type { AlertData } from "./Alert";
@@ -35,10 +36,9 @@ const ProfileUploadModal = ({
       setUploading(true);
       const formData = new FormData();
       formData.append("profile", file);
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API}/upload-profile`,
-        formData,
-        { withCredentials: true }
+      const res = await api.post(
+        `/upload-profile`,
+        formData
       );
       onProfileUpdated(res.data.profile_url);
       setAlert({ type: "success", title: "Profile Updated", message: "Your profile picture has been updated." });

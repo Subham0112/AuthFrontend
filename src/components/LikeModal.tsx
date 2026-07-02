@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../lib/axiosInstance";
 import { FaThumbsUp } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 
@@ -52,9 +52,8 @@ const LikesModal = ({ postId, likeCount, onClose }: Props) => {
   useEffect(() => {
     const fetchLikes = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_API}/getLikes/${postId}`,
-          { withCredentials: true }
+        const res = await api.get(
+          `/getLikes/${postId}`
         );
         const mapped: LikedUser[] = res.data.likes.map(
           (l: { users: { id: number; user_name: string; profile_url?: string | null } }) => l.users

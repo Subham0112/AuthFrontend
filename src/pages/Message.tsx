@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import axios from 'axios'
+import api from '../lib/axiosInstance'
 import { io } from "socket.io-client"
 import type { AlertData } from '../components/Alert'
 import Navbar from '../components/Navbar'
@@ -57,9 +57,7 @@ const Messages = ({ setAlert }: { setAlert: React.Dispatch<React.SetStateAction<
 
   const fetchConversations = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_API}/get-conversation`, {
-        withCredentials: true,
-      })
+      const res = await api.get(`/get-conversation`)
       setConversations(res.data.data)
     } catch (err) {
       console.log("Error fetching conversations", err)
@@ -133,7 +131,6 @@ const Messages = ({ setAlert }: { setAlert: React.Dispatch<React.SetStateAction<
   }
 
   const handleOpenChat = (userId: number) => {
-    // Clear unread locally before navigating
     setConversations((prev) =>
       prev.map((c) => c.userId === userId ? { ...c, unreadCount: 0 } : c)
     )

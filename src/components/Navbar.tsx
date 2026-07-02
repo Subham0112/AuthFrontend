@@ -4,7 +4,11 @@ import axios from "axios"
 import { UserDataContext } from "../context/userContext"
 import { HiHome, HiOutlineHome } from "react-icons/hi"
 import { IoChatbubbleOutline, IoChatbubble } from "react-icons/io5"
+import { HiUserGroup, HiOutlineUserGroup } from "react-icons/hi"
+import RequestModal from "./RequestModal"
+
 import { HiOutlineLogout } from "react-icons/hi"
+import skeletonProfile from "../assets/img/skeleton_profile.jpg"
 import { io } from "socket.io-client"
 
 const Navbar = () => {
@@ -13,7 +17,26 @@ const Navbar = () => {
   const context = useContext(UserDataContext)
   const [loggingOut, setLoggingOut] = useState(false)
   const [totalUnread, setTotalUnread] = useState(0)
+  const [showRequestModal, setShowRequestModal] = useState(false)
+const [pendingRequestCount, setPendingRequestCount] = useState(0)
 
+
+useEffect(() => {
+  if (!context?.user?.id) return
+
+  const fetchPendingRequests = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_API}/friend-request`,
+        { withCredentials: true }
+      )
+      setPendingRequestCount(res.data.friendRequest?.length ?? 0)
+    } catch (err) {
+      console.log("Error fetching pending requests", err)
+    }
+  }
+  fetchPendingRequests()
+}, [context?.user?.id])
   
  useEffect(() => {
   if (!context?.user?.id) return
@@ -74,13 +97,11 @@ const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path
 
-  const initials = user?.user_name
-    ? user.user_name.slice(0, 2).toUpperCase()
-    : "U"
+
 
   return (
     <nav className="sticky top-0 z-40 w-full bg-white border-b border-slate-100 shadow-[0_1px_8px_rgba(0,0,0,0.05)]">
-      <div className="max-w-5xl mx-auto px-6 h-[60px] flex items-center justify-between">
+      <div className="max-w-6xl mx-auto pl-6 pr-4 h-[60px] flex items-center justify-between">
 
         {/* Logo */}
         <div
@@ -116,24 +137,39 @@ const Navbar = () => {
               </span>
             )}
           </div>
+
+     
+
         </div>
 
         {/* Avatar + Logout */}
         <div className="flex items-center gap-3">
+          
           <div
             onClick={() => navigate("/dashboard")}
-            className="cursor-pointer w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center ring-2 ring-indigo-200 hover:ring-indigo-400 transition-all overflow-hidden"
+            className="flex flex-col items-center gap-0.5 px-4  rounded-xl transition-all duration-150 group text-slate-400 hover:text-slate-700 hover:bg-slate-50 "
           >
-            {user.profile_url ? (
               <img
-                src={user.profile_url}
+                src={user.profile_url || skeletonProfile}
                 alt={user.user_name}
                 className="w-9 h-9 rounded-full object-cover"
               />
-            ) : (
-              <span className="text-indigo-600 text-xs font-bold">{initials}</span>
-            )}
+              <span className={`text-[10px] font-medium tracking-wide "text-slate-400 group-hover:text-slate-600"`}>Profile</span>
+           
           </div>
+                 <div className="relative">
+          <NavButton
+           onClick={() => setShowRequestModal(!showRequestModal)}
+           active={showRequestModal}
+           icon={showRequestModal ? <HiUserGroup size={20} /> : <HiOutlineUserGroup size={20} />}
+           label="Requests"
+         />
+        {pendingRequestCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center pointer-events-none">
+      {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
+        </span>
+       )}
+       </div>
           <button
             onClick={handleLogout}
             disabled={loggingOut}
@@ -145,6 +181,9 @@ const Navbar = () => {
         </div>
 
       </div>
+      {showRequestModal && (
+  <RequestModal onClose={() => setShowRequestModal(false)} />
+)}
     </nav>
   )
 }

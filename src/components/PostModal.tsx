@@ -5,6 +5,7 @@ import type { PostData } from '../pages/UserDashboard';
 import type { AlertData } from './Alert';
 import { HiOutlinePhotograph, HiX } from 'react-icons/hi';
 import { BsGlobe, BsLock } from 'react-icons/bs';
+import api from '../lib/axiosInstance';
 
 const PostModal = ({
   setAlert,
@@ -45,8 +46,8 @@ const PostModal = ({
       formData.append('userId', String(user.id));
       formData.append('content', content);
       formData.append('visibility', visibility);
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API}/upload-file`,
+      const res = await api.post(
+        `/upload-file`,
         formData
       );
       setPosts((prevPosts) => [...prevPosts, res.data.data]);

@@ -56,7 +56,7 @@ const App = () => {
             <HomePage setAlert={setAlert} />
           </ProtectectedRoute>
         } />
-        <Route path="/users/:userId" element={
+        <Route path="/users/:otherUserId" element={
           <ProtectectedRoute allowedRoles={["user"]} redirectTo='/login'>
             <ProfilePage setAlert={setAlert} />
           </ProtectectedRoute>
@@ -73,7 +73,7 @@ const App = () => {
         } />
          <Route path="/messages/:userId" element={
           <ProtectectedRoute allowedRoles={["user"]} redirectTo="/login">
-            <ChatPage />
+            <ChatPage setAlert={setAlert} />
           </ProtectectedRoute>
         } />
         <Route path="/forgot-password" element={<ForgotPassword setAlert={setAlert} />} />

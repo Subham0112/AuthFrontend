@@ -1,5 +1,6 @@
-import axios from "axios";
+import api from "../lib/axiosInstance";
 import { createContext, useEffect, useState } from "react";
+import {registerLogout} from "../lib/axiosInstance";
 
 interface UsersData {
   id: number;
@@ -14,61 +15,64 @@ interface UserContextData {
   setUser: React.Dispatch<React.SetStateAction<UsersData>>;
   loading: boolean;
   refreshUser: () => Promise<void>;
+  sessionExpire: () => void;
 }
 
 export const UserDataContext = createContext<UserContextData | null>(null);
 
+const emptyUser: UsersData = {
+  id: 0,
+  email: "",
+  role: null,
+  user_name: "",
+  profile_url: null,
+};
+
 const UserContext = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<UsersData>({
-    id: 0,
-    email: "",
-    role: null,
-    user_name: "",
-    profile_url: null,
-  });
+  const [user, setUser] = useState<UsersData>(emptyUser);
   const [loading, setLoading] = useState(true);
 
   const fetchFromProfile = async () => {
-    const res = await axios.get(
-      `${import.meta.env.VITE_BACKEND_API}/profile`,
-      { withCredentials: true }
-    );
+    const res = await api.get("/profile");
     setUser(res.data.user);
   };
 
   const refreshUser = async () => {
-    try {
-      await fetchFromProfile();
-    } catch (err) {
-      console.error("Could not refresh user", err);
-    }
+    await fetchFromProfile();
+  };
+
+  const sessionExpire = () => {
+    setUser(emptyUser);
   };
 
   useEffect(() => {
-    const FetchUser = async () => {
+
+    registerLogout(()=>{
+      sessionExpire();
+    });
+    const fetchUser = async () => {
       try {
         await fetchFromProfile();
       } catch (err) {
-        try {
-          await axios.post(
-            `${import.meta.env.VITE_BACKEND_API}/refresh-token`,
-            {},
-            { withCredentials: true }
-          );
-          console.log("access token refreshed");
-          await fetchFromProfile();
-        } catch (err) {
-          console.error("Session expired. Please login again.", err);
-        }
+        sessionExpire();
       } finally {
         setLoading(false);
       }
     };
-    FetchUser();
+
+    fetchUser();
   }, []);
 
   return (
-    <UserDataContext.Provider value={{ user, setUser, loading, refreshUser }}>
+    <UserDataContext.Provider
+      value={{
+        user,
+        setUser,
+        loading,
+        refreshUser,
+        sessionExpire,
+      }}
+    >
       {children}
     </UserDataContext.Provider>
   );

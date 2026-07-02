@@ -9,6 +9,7 @@ import {
   FaRegComment,
 } from "react-icons/fa";
 import axios from "axios";
+import api from "../lib/axiosInstance";
 import CommentModal from "../components/CommentModal";
 import LikeModal from "../components/LikeModal";
 import type { AlertData } from "../components/Alert";
@@ -18,8 +19,10 @@ import ProfileUploadModal from "../components/ProfileModal";
 import Navbar from "../components/Navbar";
 import { BsGlobe, BsLock } from "react-icons/bs";
 import { HiOutlinePencilAlt } from "react-icons/hi";
+import skeletonProfile from "../assets/img/skeleton_profile.jpg";
 import { RiLogoutBoxLine } from "react-icons/ri";
 import { MdOutlineDeleteOutline, MdOutlineAddAPhoto } from "react-icons/md";
+import FriendList from "../components/FriendList";
 
 interface Media {
   media_id: number;
@@ -46,8 +49,6 @@ export interface PostData {
   likedByCurrentUser: boolean;
 }
 
-const getInitials = (name?: string) =>
-  name ? name.slice(0, 2).toUpperCase() : "U";
 
 const UserDashboard = ({
   setAlert,
@@ -56,6 +57,8 @@ const UserDashboard = ({
 }) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [showFriendList, setShowFriendList] = useState<boolean>(false);
+  const [showPosts,setShowPosts] = useState<boolean>(true);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [likesPostId, setLikesPostId] = useState<number | null>(null);
@@ -71,9 +74,8 @@ const UserDashboard = ({
     const { user } = context;
     const fetchUserPosts = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_API}/get-post/${user.id}`,
-          { withCredentials: true }
+        const res = await api.get(
+          `/get-post/${user.id}`
         );
         setPosts(res.data.posts);
       } catch (err) {
@@ -88,10 +90,9 @@ const UserDashboard = ({
 
   const handleLogoutFromAll = async () => {
     try {
-      const res = await axios.patch(
-        `${import.meta.env.VITE_BACKEND_API}/logout-from-all`,
-        {},
-        { withCredentials: true }
+      const res = await api.patch(
+        `/logout-from-all`,
+        {}
       );
       console.log(res.data.message);
       setUser({ id: 0, email: "", role: null, user_name: "", profile_url: null });
@@ -103,9 +104,8 @@ const UserDashboard = ({
 
   const handleDeleteAccount = async (id: number) => {
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_BACKEND_API}/deleteUser/${id}`,
-        { withCredentials: true }
+      await api.delete(
+        `/deleteUser/${id}`
       );
       setUser({ id: 0, email: "", role: null, user_name: "", profile_url: null });
       navigate("/login");
@@ -116,10 +116,9 @@ const UserDashboard = ({
 
   const handleLikeToggle = async (postId: number) => {
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API}/toggle-like/${postId}`,
-        {},
-        { withCredentials: true }
+      const res = await api.post(
+        `/toggle-like/${postId}`,
+        {}
       );
       setPosts((prev) =>
         prev.map((post) => {
@@ -141,9 +140,8 @@ const UserDashboard = ({
 
   const handlePostDelete = async (id: number) => {
     try {
-      const res = await axios.delete(
-        `${import.meta.env.VITE_BACKEND_API}/delete-post/${id}`,
-        { withCredentials: true }
+      const res = await api.delete(
+        `/delete-post/${id}`
       );
       console.log(res.data.message);
       setPosts((prev) => prev.filter((post) => post.id !== id));
@@ -178,19 +176,13 @@ const UserDashboard = ({
             <div className="flex items-end justify-between -mt-10 mb-4">
 
               <div className="relative group cursor-pointer" onClick={() => setShowProfileModal(true)}>
-                {profileUrl ? (
+                
                   <img
-                    src={profileUrl}
+                    src={profileUrl || skeletonProfile}
                     alt="profile"
                     className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md"
                   />
-                ) : (
-                  <div className="w-20 h-20 rounded-2xl bg-indigo-100 border-4 border-white shadow-md flex items-center justify-center">
-                    <span className="text-indigo-600 text-2xl font-bold">
-                      {getInitials(user?.user_name)}
-                    </span>
-                  </div>
-                )}
+                
                 <div className="absolute inset-0 rounded-2xl bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-150">
                   <MdOutlineAddAPhoto size={22} className="text-white" />
                 </div>
@@ -249,18 +241,44 @@ const UserDashboard = ({
                 <MdOutlineDeleteOutline size={16} />
                 Delete account
               </button>
+               <button
+                onClick={() => {
+                  navigate("/change-password")
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 text-sm font-medium transition-all duration-150"
+              >
+                <MdOutlineDeleteOutline size={16} />
+              Change Password              
+              </button>
+            </div>
+            <div className="flex gap-2 pt-4 border-t border-slate-50 mt-3">
+                <button
+                onClick={() =>{ 
+                  setShowPosts(true)
+                  setShowFriendList(false)}}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 text-sm font-medium transition-all duration-150"
+              >
+               Show Posts 
+              </button>
+              <button
+                onClick={() =>{ 
+                  setShowFriendList(true)
+                  setShowPosts(false)}}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 text-sm font-medium transition-all duration-150"
+              >
+               Show Friends 
+              </button>
             </div>
           </div>
         </div>
 
-        <div>
+        {showPosts && <div>
           <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-4 px-1">
             Your Posts
           </h3>
 
-          {posts.length === 0 ? (
+        {  posts.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-              <div className="text-4xl mb-3">✍️</div>
               <p className="text-slate-400 text-sm">You haven't posted anything yet.</p>
               <button
                 onClick={() => setShowModal(true)}
@@ -278,20 +296,13 @@ const UserDashboard = ({
                 >
                   <div className="px-5 pt-5 pb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {/* Uses real profile pic from context */}
-                      {profileUrl ? (
+                      
                         <img
-                          src={profileUrl}
+                          src={profileUrl || skeletonProfile}
                           alt="profile"
                           className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-100"
                         />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-indigo-600 text-xs font-bold">
-                            {getInitials(post.users?.user_name)}
-                          </span>
-                        </div>
-                      )}
+                      
                       <div>
                         <p className="text-sm font-semibold text-slate-800">{post.users?.user_name}</p>
                         <div className="flex items-center gap-1 mt-0.5">
@@ -376,7 +387,9 @@ const UserDashboard = ({
               ))}
             </div>
           )}
-        </div>
+        </div>}
+
+          { showFriendList && <FriendList setAlert={setAlert} showFriend={showFriendList} />}
       </div>
 
       {/* ── Modals ── */}
