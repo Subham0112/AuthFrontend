@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../lib/axiosInstance";
 import { FaThumbsUp } from "react-icons/fa";
-import { IoClose } from "react-icons/io5";
+import { HiX } from "react-icons/hi";
+import skeletonProfile from "../assets/img/skeleton_profile.jpg";
 
 interface LikedUser {
   id: number;
@@ -18,12 +19,11 @@ interface Props {
 const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
 
 const avatarColors = [
-  "bg-indigo-100 text-indigo-600",
-  "bg-sky-100 text-sky-600",
-  "bg-emerald-100 text-emerald-600",
-  "bg-rose-100 text-rose-600",
-  "bg-amber-100 text-amber-600",
-  "bg-violet-100 text-violet-600",
+  "bg-ivory-200 text-ink-600",
+  "bg-sage-100 text-sage-700",
+  "bg-gold-50 text-gold-700",
+  "bg-clay-100 text-clay-600",
+  "bg-ivory-300 text-ink-700",
 ];
 const getColor = (name: string) =>
   avatarColors[name.charCodeAt(0) % avatarColors.length];
@@ -32,14 +32,14 @@ const LikeAvatar = ({ user }: { user: LikedUser }) => {
   if (user.profile_url) {
     return (
       <img
-        src={user.profile_url}
+        src={user.profile_url || skeletonProfile}
         alt={user.user_name}
-        className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-100"
+        className="h-9 w-9 rounded-full object-cover flex-shrink-0 ring-1 ring-ivory-400"
       />
     );
   }
   return (
-    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${getColor(user.user_name)}`}>
+    <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${getColor(user.user_name)}`}>
       {getInitials(user.user_name)}
     </div>
   );
@@ -70,49 +70,50 @@ const LikesModal = ({ postId, likeCount, onClose }: Props) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/30 p-4 backdrop-blur-[2px] animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-sm mx-4 overflow-hidden"
+        className="w-full max-w-sm overflow-hidden rounded-2xl border border-ivory-400 bg-white shadow-lift animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center">
-              <FaThumbsUp size={11} className="text-white" />
+        <div className="flex items-center justify-between border-b border-ivory-300 px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sage-700 text-white">
+              <FaThumbsUp size={11} />
             </div>
-            <span className="text-sm font-semibold text-slate-800">
+            <span className="font-display text-[15px] font-medium text-ink-900">
               Liked by
             </span>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+            className="icon-btn"
+            aria-label="Close likes"
           >
-            <IoClose size={18} />
+            <HiX size={16} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto max-h-72">
+        <div className="max-h-72 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-10">
-              <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-ivory-300 border-t-sage-700" />
             </div>
           ) : users.length === 0 ? (
-            <p className="text-center text-slate-400 text-sm py-10">
-              No likes yet.
+            <p className="py-10 text-center text-sm text-ink-400">
+              No likes yet — be the first.
             </p>
           ) : (
             users.map((u) => (
               <div
                 key={u.id}
-                className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-ivory-100"
               >
                 <LikeAvatar user={u} />
-                <span className="text-sm font-medium text-slate-800">
+                <span className="text-sm font-semibold text-ink-800">
                   {u.user_name}
                 </span>
               </div>
@@ -121,8 +122,8 @@ const LikesModal = ({ postId, likeCount, onClose }: Props) => {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/60">
-          <span className="text-xs text-slate-400">
+        <div className="border-t border-ivory-300 bg-ivory-50 px-5 py-3">
+          <span className="text-xs text-ink-400">
             {likeCount} {likeCount === 1 ? "person" : "people"} liked this post
           </span>
         </div>

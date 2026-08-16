@@ -21,6 +21,9 @@ interface FriendRecord {
   req_receiver: FriendUser;
 }
 
+// Shared type-scale helper for the display face used on names/titles.
+const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
+
 const FriendList = ({ showFriend, setAlert }: { showFriend: boolean; setAlert: React.Dispatch<React.SetStateAction<AlertData|null>> }) => {
   const [friends, setFriends] = useState<FriendRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,17 +80,17 @@ const FriendList = ({ showFriend, setAlert }: { showFriend: boolean; setAlert: R
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-4 px-1">
+      <h3 className="text-[11px] font-semibold text-[#9C978A] uppercase tracking-widest mb-4 px-1">
         Friends
       </h3>
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-          <p className="text-slate-400 text-sm">Loading friends...</p>
+        <div className="bg-white rounded-[16px] border border-[#E7E3DA] p-12 text-center">
+          <p className="text-[#9C978A] text-sm">Loading friends...</p>
         </div>
       ) : friends.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-          <p className="text-slate-400 text-sm">You don't have any friends yet.</p>
+        <div className="bg-white rounded-[16px] border border-[#E7E3DA] p-12 text-center">
+          <p style={serif} className="text-lg italic text-[#6B675C]">No friends yet</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -100,26 +103,26 @@ const FriendList = ({ showFriend, setAlert }: { showFriend: boolean; setAlert: R
             return (
               <div
                 key={record.friends_id}
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200 px-5 py-4 flex items-center justify-between"
+                className="bg-white rounded-[14px] border border-[#E7E3DA] hover:border-[#DBD6CA] shadow-[0_1px_2px_rgba(38,36,32,0.03)] hover:shadow-[0_4px_16px_rgba(38,36,32,0.06)] transition-all duration-300 px-5 py-4 flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                     <img
                       src={otherUser.profile_url || skeletonProfile}
                       alt="profile"
-                      className="w-10 h-10 rounded-full object-cover border border-slate-100"
+                      className="w-10 h-10 rounded-full object-cover ring-1 ring-[#E7E3DA]"
                     />
                   
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">
+                    <p style={serif} className="text-[14.5px] font-medium text-[#26241F]">
                       {otherUser.user_name}
                     </p>
-                    <p className="text-xs text-slate-400">{otherUser.email}</p>
+                    <p className="text-[12px] text-[#9C978A]">{otherUser.email}</p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleUnfriend(otherUser.id)}
-                  className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 text-xs font-medium transition-all duration-150"
+                  className="px-3 py-1.5 rounded-lg text-[#9C978A] hover:text-[#7B3F3F] hover:bg-[#F7EEEC] text-[12px] font-medium transition-colors duration-150"
                 >
                   Unfriend
                 </button>

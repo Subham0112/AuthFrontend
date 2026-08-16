@@ -2,3 +2,114 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-ivory-100 font-sans text-ink-800;
+  }
+
+  ::selection {
+    @apply bg-sage-200 text-ink-900;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #D3CDBF transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #D3CDBF;
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: #B8B1A1;
+  }
+}
+
+@layer components {
+  /* ── Surfaces ─────────────────────────────── */
+  .card-luxe {
+    @apply rounded-2xl border border-ivory-400 bg-white shadow-hairline;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-0.5 hover:border-ivory-500 hover:shadow-luxe;
+  }
+
+  /* ── Buttons ─────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl text-[13px] font-semibold transition-all duration-150 select-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-ink-900 text-white hover:bg-ink-700 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-sage {
+    @apply btn bg-sage-700 text-white hover:bg-sage-600 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply btn border border-ivory-400 bg-white text-ink-600 hover:bg-ivory-100 hover:text-ink-900 active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply btn text-ink-400 hover:bg-ivory-200 hover:text-ink-900;
+  }
+
+  .btn-danger-ghost {
+    @apply btn text-ink-400 hover:bg-clay-100 hover:text-clay-600;
+  }
+
+  .btn-sage-ghost {
+    @apply btn text-ink-400 hover:bg-sage-100 hover:text-sage-700;
+  }
+
+  /* ── Forms ───────────────────────────────── */
+  .input-luxe {
+    @apply w-full rounded-xl border border-ivory-300 bg-ivory-100 px-4 py-2.5 text-[13.5px] text-ink-900 outline-none transition-all duration-150 placeholder:text-ink-300 focus:border-sage-600 focus:bg-white focus:ring-[3px] focus:ring-sage-200/70;
+  }
+
+  .label-luxe {
+    @apply mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-500;
+  }
+
+  /* ── Feed / list pieces ──────────────────── */
+  .feed-pill {
+    @apply flex flex-col items-center gap-1 rounded-xl px-4 py-1.5 transition-colors duration-150;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider;
+  }
+
+  /* ── Skeleton shimmer ────────────────────── */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      #F1EFE9 25%,
+      #FAF8F3 50%,
+      #F1EFE9 75%
+    );
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+  }
+
+  .icon-btn {
+    @apply flex h-8 w-8 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ivory-200 hover:text-ink-800;
+  }
+}

@@ -25,6 +25,9 @@ interface Props {
   onCommentDelete: () => void;
 }
 
+// Shared type-scale helper for the display face used on names.
+const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
+
 const getInitials = (name?: string) =>
   name ? name.slice(0, 2).toUpperCase() : "U";
 
@@ -36,12 +39,12 @@ const CommentAvatar = ({ name, profileUrl }: { name?: string; profileUrl?: strin
       <img
         src={profileUrl}
         alt={name}
-        className="h-8 w-8 shrink-0 rounded-full object-cover border border-slate-100"
+        className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-[#E7E3DA]"
       />
     );
   }
   return (
-    <div className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold bg-sky-100 text-sky-600`}>
+    <div className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold bg-[#F1EFE9] text-[#6B675C]`}>
       {getInitials(name)}
     </div>
   );
@@ -114,29 +117,29 @@ const CommentModal = ({ postId, setAlert, onCommentAdded, onCommentDelete, onClo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px] p-4">
-      <div className="w-full max-w-[480px] max-h-[80vh] flex flex-col rounded-2xl bg-white shadow-xl border border-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#26241F]/30 backdrop-blur-[2px] p-4">
+      <div className="w-full max-w-[480px] max-h-[80vh] flex flex-col rounded-[18px] bg-white shadow-[0_12px_40px_rgba(38,36,32,0.16)] border border-[#E7E3DA]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="text-sm font-semibold text-slate-800">Comments</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EFECE4]">
+          <h2 style={serif} className="text-[15px] font-medium text-[#26241F]">Comments</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-[#B2AC9C] hover:bg-[#F1EFE9] hover:text-[#6B675C] transition-colors"
           >
-            <HiX size={18} />
+            <HiX size={17} />
           </button>
         </div>
 
         {/* Comments list */}
-        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-10">
-              <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[#E7E3DA] border-t-[#435B52] rounded-full animate-spin" />
             </div>
           ) : comments.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">
-              No comments yet. Be the first to comment.
+            <p style={serif} className="text-[15px] italic text-[#6B675C] text-center py-8">
+              No comments yet
             </p>
           ) : (
             comments.map((c) => {
@@ -147,16 +150,16 @@ const CommentModal = ({ postId, setAlert, onCommentAdded, onCommentDelete, onClo
                     profileUrl={c.users?.profile_url}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="inline-block bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm px-3 py-2 max-w-full">
-                      <p className="text-xs font-semibold text-slate-800 mb-0.5">
+                    <div className="inline-block bg-[#F7F6F2] border border-[#EFECE4] rounded-2xl rounded-tl-sm px-3.5 py-2.5 max-w-full">
+                      <p style={serif} className="text-[12.5px] font-medium text-[#26241F] mb-0.5">
                         {c.users?.user_name || "User"}
                       </p>
-                      <p className="text-sm text-slate-700 break-words">{c.comment}</p>
+                      <p className="text-[13.5px] text-[#3A3833] break-words leading-relaxed">{c.comment}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleDeleteComment(c.id)}
-                    className="opacity-0 group-hover:opacity-100 mt-1.5 p-1.5 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 mt-1.5 p-1.5 rounded-lg text-[#C4BFB0] hover:text-[#7B3F3F] hover:bg-[#F7EEEC] transition-colors flex-shrink-0"
                   >
                     <FaRegTrashAlt size={12} />
                   </button>
@@ -167,7 +170,7 @@ const CommentModal = ({ postId, setAlert, onCommentAdded, onCommentDelete, onClo
         </div>
 
         {/* Input */}
-        <div className="px-5 py-3 border-t border-slate-100 flex items-center gap-2">
+        <div className="px-5 py-3.5 border-t border-[#EFECE4] flex items-center gap-2">
           <CommentAvatar
             name={currentUser?.user_name}
             profileUrl={currentUser?.profile_url}
@@ -177,12 +180,12 @@ const CommentModal = ({ postId, setAlert, onCommentAdded, onCommentDelete, onClo
             onChange={(e) => setNewComment(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleAddComment(); }}
             placeholder="Write a comment..."
-            className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:bg-white"
+            className="flex-1 rounded-full border border-[#E7E3DA] bg-[#F7F6F2] px-4 py-2 text-[13.5px] text-[#2A2822] outline-none transition-colors focus:border-[#435B52] focus:ring-2 focus:ring-[#E9EEEA] focus:bg-white"
           />
           <button
             onClick={handleAddComment}
             disabled={submitting || !newComment.trim()}
-            className="px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-all"
+            className="px-4 py-2 rounded-full bg-[#26241F] hover:bg-[#3A3833] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[13px] font-medium transition-colors"
           >
             Post
           </button>

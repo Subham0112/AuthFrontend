@@ -27,8 +27,44 @@ interface OtherUser {
   profile_url?: string | null;
 }
 
+// Shared type-scale helper for the display face used on names and headers.
+const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
+
 const socket = io(import.meta.env.VITE_BACKEND_API, { withCredentials: true });
 const getInitials = (name?: string) => name?.slice(0, 2).toUpperCase() || "?";
+
+const isSameDay = (a: string, b: string) => {
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+};
+
+const formatDay = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  if (date.toDateString() === now.toDateString()) return "Today";
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return date.toLocaleDateString([], {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: date.getFullYear() === now.getFullYear() ? undefined : "numeric",
+  });
+};
+
+const DayDivider = ({ date }: { date: string }) => (
+  <div className="flex items-center justify-center py-2">
+    <span className="rounded-full border border-ivory-400 bg-ivory-100 px-3 py-1 text-[10.5px] font-bold uppercase tracking-[0.14em] text-ink-400">
+      {formatDay(date)}
+    </span>
+  </div>
+);
 
 const HeaderAvatar = ({ user }: { user: OtherUser | null }) => {
   if (user?.profile_url) {
@@ -36,12 +72,12 @@ const HeaderAvatar = ({ user }: { user: OtherUser | null }) => {
       <img
         src={user.profile_url}
         alt={user.user_name}
-        className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-100"
+        className="w-9 h-9 rounded-full object-cover flex-shrink-0 ring-1 ring-[#E7E3DA]"
       />
     );
   }
   return (
-    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 bg-sky-100 text-sky-600">
+    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 bg-[#F1EFE9] text-[#6B675C]">
       {getInitials(user?.user_name)}
     </div>
   );
@@ -426,10 +462,10 @@ useEffect(() => {
       <img
         src={otherUser.profile_url}
         alt={otherUser.user_name}
-        className="w-6 h-6 rounded-full object-cover flex-shrink-0 border border-slate-100 self-end mb-1"
+        className="w-6 h-6 rounded-full object-cover flex-shrink-0 ring-1 ring-[#E7E3DA] self-end mb-1"
       />
     ) : (
-      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold flex-shrink-0 self-end mb-1 bg-sky-100 text-sky-600">
+      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold flex-shrink-0 self-end mb-1 bg-[#F1EFE9] text-[#6B675C]">
         {getInitials(otherUser?.user_name)}
       </div>
     );
@@ -439,33 +475,44 @@ useEffect(() => {
     myMessages.length > 0 ? myMessages[myMessages.length - 1].id : null;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB] flex flex-col">
+    <div className="min-h-screen bg-[#F7F6F2] flex flex-col text-[#2A2822]">
       <Navbar />
       <div
      
-      className="max-w-[600px] w-full mx-auto pt-6 pb-8 px-4 flex flex-col flex-1">
-        <div className="flex flex-col h-[75vh] rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+      className="max-w-[600px] w-full mx-auto pt-8 pb-8 px-4 flex flex-col flex-1">
+        <div className="flex flex-col h-[75vh] rounded-[16px] border border-[#E7E3DA] bg-white overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-3 border-b border-ivory-300 bg-white px-4 py-3.5">
             <button
               onClick={() => navigate("/messages")}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+              className="icon-btn shrink-0"
+              aria-label="Back to messages"
             >
-              <BsArrowLeft size={16} />
+              <BsArrowLeft size={17} />
             </button>
             <HeaderAvatar user={otherUser} />
-            <div className="flex-1 min-w-0">
-              <p
-                onClick={() => navigate(`/users/${otherUserId}`)}
-                className="text-sm font-semibold text-slate-800 truncate cursor-pointer hover:text-indigo-600 transition-colors"
-              >
-                {otherUser?.user_name || "..."}
-              </p>
-              {typing && (
-                <p className="text-[11px] text-indigo-400 font-medium">
-                  typing...
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p
+                  onClick={() => navigate(`/users/${otherUserId}`)}
+                  style={serif}
+                  className="cursor-pointer truncate text-[15px] font-medium text-ink-900 transition-colors hover:text-sage-700"
+                >
+                  {otherUser?.user_name || "..."}
                 </p>
-              )}
+                {typing && (
+                  <span className="flex items-center gap-1 text-sage-700">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sage-600 [animation-delay:0ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sage-600 [animation-delay:120ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sage-600 [animation-delay:240ms]" />
+                  </span>
+                )}
+              </div>
+              <p className="truncate text-[11.5px] text-ink-400">
+                {typing
+                  ? `${otherUser?.user_name || "They"} is typing…`
+                  : otherUser?.email || "Conversation"}
+              </p>
             </div>
           </div>
 
@@ -473,8 +520,8 @@ useEffect(() => {
           <div className="relative flex-1 min-h-0">
             {loadingOlder && (
               <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                <div className="flex items-center gap-2 text-xs text-slate-500 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm border border-slate-100">
-                  <span className="h-3.5 w-3.5 rounded-full border-2 border-slate-300 border-t-indigo-400 animate-spin" />
+                <div className="flex items-center gap-2 rounded-full border border-ivory-400 bg-white/90 px-3 py-1.5 text-xs text-ink-600 backdrop-blur">
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ivory-400 border-t-sage-700" />
                   Loading older messages...
                 </div>
               </div>
@@ -490,31 +537,34 @@ useEffect(() => {
                     className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"} animate-pulse`}
                   >
                     <div
-                      className={`h-9 rounded-2xl bg-slate-100 ${i % 2 === 0 ? "w-40" : "w-52"}`}
+                      className={`h-9 rounded-2xl bg-[#F1EFE9] ${i % 2 === 0 ? "w-40" : "w-52"}`}
                     />
                   </div>
                 ))}
               </div>
             ) : messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full pt-10 gap-2">
-                <p className="text-sm font-medium text-slate-500">
+                <p style={serif} className="text-base italic text-[#6B675C]">
                   No messages yet
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#9C978A]">
                   Say hello to {otherUser?.user_name}!
                 </p>
               </div>
             ) : (
               <>
-                {messages.map((msg) => {
+                {messages.map((msg, idx) => {
                 const isOwn = msg.sender_id === currentUserId;
                 const isLastSent = isOwn && msg.id === lastSentId;
                 const isLastRead = isOwn && msg.id === lastReadMessageId;
+                const prev = messages[idx - 1];
+                const showDay = !prev || !isSameDay(prev.created_at, msg.created_at);
                 return (
-                  <div
-                    key={msg.id}
-                    className={`flex group flex-col ${isOwn ? "items-end" : "items-start"}`}
-                  >
+                  <div key={msg.id} className="flex flex-col">
+                    {showDay && <DayDivider date={msg.created_at} />}
+                    <div
+                      className={`flex group flex-col ${isOwn ? "items-end" : "items-start"}`}
+                    >
                     <div
                       className={`flex items-center gap-1 ${isOwn ? "justify-end" : "justify-start"} w-full`}
                     >
@@ -527,17 +577,17 @@ useEffect(() => {
                           handleMsgDelete(msg.id);
                           setOpenMenuId(null);
                         }}
-                      className="px-7 cursor-pointer py-2 bg-slate-300 text-red-600 text-xs flex gap-3">
+                      className="px-4 cursor-pointer py-2 rounded-lg bg-[#F7EEEC] text-[#7B3F3F] text-xs flex items-center gap-2 font-medium">
 
                       <FaRegTrashAlt
-                        className="text-red-600 "
+                        className="text-[#7B3F3F]"
                       
                       />
                       Delete Message
                       </span>
                     }
                       <span
-                        className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-100"
+                        className="cursor-pointer text-[#B2AC9C] hover:text-[#6B675C] opacity-0 group-hover:opacity-100 transition-opacity duration-100"
                         onClick={() =>
                           setOpenMenuId((prev) =>
                             prev === msg.id ? null : msg.id,
@@ -550,7 +600,7 @@ useEffect(() => {
                       </span>}
 
                       <div
-                        className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-sm ${isOwn ? "bg-indigo-500 text-white rounded-br-sm" : "bg-slate-100 text-slate-800 rounded-bl-sm"}`}
+                        className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-[13.5px] shadow-sm ${isOwn ? "bg-ink-900 text-white rounded-br-sm" : "bg-white border border-ivory-300 text-ink-800 rounded-bl-sm"}`}
                       >
                         <div
                           className={`flex ${isOwn ? "flex-row-reverse" : "flex-row"} gap-5`}
@@ -560,7 +610,7 @@ useEffect(() => {
                           </p>
                         </div>
                         <span
-                          className={`block text-[10px] mt-1 ${isOwn ? "text-indigo-200" : "text-slate-400"} text-right`}
+                          className={`block text-[10px] mt-1 ${isOwn ? "text-white/50" : "text-[#9C978A]"} text-right`}
                         >
                           {new Date(msg.created_at).toLocaleTimeString([], {
                             hour: "2-digit",
@@ -573,16 +623,17 @@ useEffect(() => {
                     {isOwn && (isLastRead || isLastSent) && (
                       <div className="flex items-center mt-0.5 mr-1 h-3.5">
                         {isLastRead ? (
-                          <span className="text-[10px] text-indigo-400 font-medium">
+                          <span className="text-[10px] font-semibold text-sage-700">
                             Seen
                           </span>
                         ) : (
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-ink-300">
                             Sent
                           </span>
                         )}
                       </div>
                     )}
+                    </div>
                   </div>
                 );
               })}
@@ -592,15 +643,15 @@ useEffect(() => {
           </div>
 
           {/* Input */}
-          <div className="flex items-center gap-2.5 px-4 py-3.5 border-t border-slate-100">
+          <div className="flex items-center gap-2.5 border-t border-ivory-300 bg-white px-4 py-3.5">
             {currentUser?.profile_url ? (
               <img
                 src={currentUser.profile_url}
                 alt={currentUser.user_name}
-                className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-slate-100"
+                className="w-7 h-7 rounded-full object-cover flex-shrink-0 ring-1 ring-[#E7E3DA]"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 bg-sky-100 text-sky-600">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 bg-[#F1EFE9] text-[#6B675C]">
                 {getInitials(currentUser?.user_name)}
               </div>
             )}
@@ -610,12 +661,12 @@ useEffect(() => {
               onKeyDown={handleKeyDown}
               type="text"
               placeholder={`Message ${otherUser?.user_name || ""}...`}
-              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+              className="flex-1 rounded-xl border border-ivory-400 bg-ivory-100 px-4 py-2.5 text-[13.5px] outline-none transition-all placeholder:text-ink-300 focus:border-sage-600 focus:bg-white focus:ring-[3px] focus:ring-sage-200/70"
             />
             <button
               onClick={handleSend}
               disabled={!newMessage.trim()}
-              className="rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed p-2.5 text-white transition-all duration-150 flex-shrink-0"
+              className="rounded-xl bg-ink-900 p-2.5 text-white transition-all duration-150 hover:bg-sage-700 disabled:cursor-not-allowed disabled:opacity-30 flex-shrink-0"
               aria-label="Send message"
             >
               <BsSendFill size={14} />

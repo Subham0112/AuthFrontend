@@ -1,11 +1,11 @@
 import { useState, useEffect, useContext } from 'react'
 import type { ChangeEvent } from 'react'
 import { UserDataContext } from '../context/userContext';
-// import Alert from '../components/Alert'
 import type { AlertData } from '../components/Alert';
 import { BsEye, BsEyeSlash, BsEnvelope, BsLock } from 'react-icons/bs';
 import axios from "axios"
 import { useNavigate } from 'react-router-dom';
+import AuthLayout from '../components/AuthLayout';
 
 
 interface UserData {
@@ -108,83 +108,82 @@ const handleSubmit =async ()=>{
          }
 }
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-200  to-blue-250 flex items-center justify-center px-4 py-10'>
-      <div className='w-full max-w-sm bg-white border border-slate-100 shadow-xl shadow-slate-200/60 rounded-2xl p-8 sm:p-9'>
-
-        <div className='mb-8 text-center'>
-          <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white font-semibold text-lg'>
-            M
+    <AuthLayout
+      eyebrow="Welcome back"
+      title="Log in to ConnectHub"
+      subtitle="Pick up where you left off — your circle has been waiting."
+    >
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="label-luxe">Email</label>
+          <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.email ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+            <BsEnvelope className="text-ink-300 shrink-0" />
+            <input
+              id="email"
+              onChange={handleChange}
+              name="email"
+              value={usersData.email}
+              type="email"
+              placeholder="you@example.com"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
           </div>
-          <h1 className='text-xl font-semibold text-slate-900'>Welcome back</h1>
-          <p className='mt-1 text-sm text-slate-500'>Log in to MySocialApp to continue</p>
+          {fieldErrors.email && <p className="text-xs font-medium text-clay-600">{fieldErrors.email}</p>}
         </div>
 
-        <div className='space-y-4'>
-          <div className='space-y-1.5'>
-            <label htmlFor="email" className='block text-sm font-medium text-slate-700'>Email</label>
-            <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3.5 py-2.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 ${fieldErrors.email ? 'border-red-300' : 'border-slate-200 focus-within:border-blue-400'}`}>
-              <BsEnvelope className='text-slate-400 shrink-0' />
-              <input
-                id="email"
-                onChange={handleChange}
-                name='email'
-                value={usersData.email}
-                type="email"
-                placeholder='you@example.com'
-                className='w-full bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-400'
-              />
-            </div>
-            {fieldErrors.email && (
-              <p className='text-red-500 text-xs'>{fieldErrors.email}</p>
-            )}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="label-luxe mb-0">Password</label>
+            <a
+              href="/forgot-password"
+              className="text-[12px] font-semibold text-sage-700 transition-colors hover:text-sage-600 hover:underline"
+            >
+              Forgot password?
+            </a>
           </div>
-
-          <div className='space-y-1.5'>
-            <label htmlFor="password" className='block text-sm font-medium text-slate-700'>Password</label>
-            <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3.5 py-2.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 ${fieldErrors.password ? 'border-red-300' : 'border-slate-200 focus-within:border-blue-400'}`}>
-              <BsLock className='text-slate-400 shrink-0' />
-              <input
-                id="password"
-                onChange={handleChange}
-                name="password"
-                value={usersData.password}
-                type={showPassword ? "text" : "password"}
-                placeholder='••••••••'
-                className='w-full bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-400'
-              />
-              <button
-                type='button'
-                onClick={() => setShowPassword(!showPassword)}
-                className='text-slate-400 hover:text-slate-700 transition focus:outline-none shrink-0'
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <BsEye /> : <BsEyeSlash />}
-              </button>
-            </div>
-            {fieldErrors.password && (
-              <p className='text-red-500 text-xs'>{fieldErrors.password}</p>
-            )}
+          <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.password ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+            <BsLock className="text-ink-300 shrink-0" />
+            <input
+              id="password"
+              onChange={handleChange}
+              name="password"
+              value={usersData.password}
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-ink-300 transition-colors hover:text-ink-800 focus:outline-none shrink-0"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <BsEye /> : <BsEyeSlash />}
+            </button>
           </div>
-
-          <button
-            onClick={handleSubmit}
-            className='w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800'>
-            Log in
-          </button>
+          {fieldErrors.password && <p className="text-xs font-medium text-clay-600">{fieldErrors.password}</p>}
         </div>
 
-        <div className='mt-6 flex items-center gap-3 text-xs text-slate-400'>
-          <div className='h-px flex-1 bg-slate-100' />
-          <span>or</span>
-          <div className='h-px flex-1 bg-slate-100' />
-        </div>
-
-        <div className='mt-6 text-center text-sm text-slate-500'>
-          <p>Don't have an account? <a href="/register" className='font-medium text-blue-600 hover:text-blue-700'>Register</a></p>
-          <p className='mt-2'><a href="/forgot-password" className='text-slate-500 hover:text-slate-700'>Forgot password?</a></p>
-        </div>
+        <button onClick={handleSubmit} className="btn-primary w-full py-3 text-[13.5px]">
+          Log in
+        </button>
       </div>
-    </div>
+
+      <div className="mt-7 flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-300">
+        <div className="h-px flex-1 bg-ivory-300" />
+        <span>new to the circle?</span>
+        <div className="h-px flex-1 bg-ivory-300" />
+      </div>
+
+      <div className="mt-5 text-center">
+        <a
+          href="/register"
+          className="text-[13.5px] font-semibold text-sage-700 transition-colors hover:text-sage-600 hover:underline"
+        >
+          Create an account
+        </a>
+      </div>
+    </AuthLayout>
   )
 }
 

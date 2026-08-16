@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import FriendRequest from "./FriendRequest"
 import SentRequestList from "./SentRequestList"
 
@@ -19,42 +19,49 @@ const RequestModal = ({ onClose }: { onClose: () => void }) => {
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-5 top-[calc(100%+10px)] w-[360px] bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+      className="absolute right-5 top-[calc(100%+10px)] w-[360px] animate-scale-in overflow-hidden rounded-2xl border border-ivory-400 bg-white shadow-lift z-50"
     >
       {/* little caret pointing up at the nav button */}
-      <div className="absolute -top-1.5 right-6 w-3 h-3 bg-white border-t border-l border-slate-100 rotate-45" />
+      <div className="absolute -top-1.5 right-6 h-3 w-3 rotate-45 border-t border-l border-ivory-400 bg-white" />
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-2">
-        <h2 className="text-base font-bold text-slate-800">Friend Requests</h2>
+      <div className="flex items-center justify-between px-5 pb-2 pt-5">
+        <h2 className="font-display text-[17px] font-medium text-ink-900">Friend Requests</h2>
+        <span className="chip bg-ivory-200 text-ink-500">Social</span>
       </div>
 
       {/* Tabs */}
-      <div className="flex px-4 gap-1 border-b border-slate-100">
+      <div className="flex gap-1 border-b border-ivory-300 px-4">
         <button
           onClick={() => setActiveTab("received")}
-          className={`px-3 py-2 text-sm font-semibold border-b-2 transition-all duration-150 ${
+          className={`relative px-3 py-2.5 text-[13px] font-semibold transition-colors duration-150 ${
             activeTab === "received"
-              ? "text-indigo-600 border-indigo-500"
-              : "text-slate-400 border-transparent hover:text-slate-600"
+              ? "text-sage-700"
+              : "text-ink-300 hover:text-ink-600"
           }`}
         >
           Requests
+          {activeTab === "received" && (
+            <span className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-sage-600" />
+          )}
         </button>
         <button
           onClick={() => setActiveTab("sent")}
-          className={`px-3 py-2 text-sm font-semibold border-b-2 transition-all duration-150 ${
+          className={`relative px-3 py-2.5 text-[13px] font-semibold transition-colors duration-150 ${
             activeTab === "sent"
-              ? "text-indigo-600 border-indigo-500"
-              : "text-slate-400 border-transparent hover:text-slate-600"
+              ? "text-sage-700"
+              : "text-ink-300 hover:text-ink-600"
           }`}
         >
           Sent Requests
+          {activeTab === "sent" && (
+            <span className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-sage-600" />
+          )}
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-3 max-h-[500px] overflow-y-auto">
+      <div className="max-h-[500px] overflow-y-auto p-3">
         {activeTab === "received" ? (
           <FriendRequest showRequest={activeTab === "received"} />
         ) : (

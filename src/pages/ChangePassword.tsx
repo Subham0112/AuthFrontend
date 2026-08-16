@@ -1,9 +1,9 @@
 import { useContext, useState } from 'react'
 import { BsEye,BsEyeSlash } from 'react-icons/bs';
 import axios from "axios"
-// import Alert from '../components/Alert'
 import type { AlertData } from '../components/Alert';
 import {UserDataContext} from "../context/userContext";
+import AuthLayout from '../components/AuthLayout';
 
 interface ChangePassword{
     password:string;
@@ -66,46 +66,67 @@ const ChangePasswordPage = ({setAlert}:{ setAlert: React.Dispatch<React.SetState
         }
     }
   return (
-    <div>
-        <div className='w-full h-screen flex items-center justify-center'>
-        <div className='w-[450px] min-h-[400px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
-        <h1 className='text-2xl font-bold'>Change Password</h1>
-        <div className="w-full mt-4">
-            <div className='mb-4 flex flex-col w-full'>
-            <label className="block mb-2">Old Password</label>
-            <div className="flex items-center gap-2">
+    <AuthLayout
+      eyebrow="Security"
+      title="Change your password"
+      subtitle="Keep your account locked down — update it anytime."
+    >
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="oldPassword" className="label-luxe">Current password</label>
+          <div className="flex items-center gap-2.5 rounded-xl border border-ivory-300 bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:border-sage-600 focus-within:bg-white focus-within:ring-[3px] focus-within:ring-sage-200/70">
             <input
-            onChange={handleChange}
-            value={changeData.password}
-            name='password'
-            type={showPassword?"text":"password"} placeholder='Enter old password' className='w-full p-2 rounded-md mb-4' />
-            <span onClick={()=>{
-                setShowPassword(!showPassword)
-             }}>{showPassword ? <BsEye />:<BsEyeSlash />}</span>
-             </div>
-            </div>
-
-
-            <div className='mb-4 flex flex-col w-full'>
-            <label className="block mb-2">New Password</label>
-           <div className="flex items-center gap-2">
-            <input
-            onChange={handleChange}
-            value={changeData.changePassword}
-            name='changePassword'
-            type={showChangePassword?"text":"password"} placeholder="Enter New Password" className='w-full p-2 rounded-md ' />
-            <span onClick={()=>{
-                setShowChangePassword(!showChangePassword)
-             }}>{showChangePassword ? <BsEye />:<BsEyeSlash />}</span>
-            </div>
-            </div>
+              id="oldPassword"
+              onChange={handleChange}
+              value={changeData.password}
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Your current password"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
             <button
-            onClick={handleChangePassword}
-             className='w-full bg-blue-500 text-white p-2 rounded-md'>Change Password</button>
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-ink-300 transition-colors hover:text-ink-800 focus:outline-none shrink-0"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <BsEye /> : <BsEyeSlash />}
+            </button>
+          </div>
         </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="newPassword" className="label-luxe">New password</label>
+          <div className="flex items-center gap-2.5 rounded-xl border border-ivory-300 bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:border-sage-600 focus-within:bg-white focus-within:ring-[3px] focus-within:ring-sage-200/70">
+            <input
+              id="newPassword"
+              onChange={handleChange}
+              value={changeData.changePassword}
+              name="changePassword"
+              type={showChangePassword ? "text" : "password"}
+              placeholder="Choose a new password"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
+            <button
+              type="button"
+              onClick={() => setShowChangePassword(!showChangePassword)}
+              className="text-ink-300 transition-colors hover:text-ink-800 focus:outline-none shrink-0"
+              aria-label={showChangePassword ? 'Hide password' : 'Show password'}
+            >
+              {showChangePassword ? <BsEye /> : <BsEyeSlash />}
+            </button>
+          </div>
         </div>
-    </div>
-    </div>
+
+        <button
+          onClick={handleChangePassword}
+          disabled={!changeData.password || !changeData.changePassword}
+          className="btn-primary w-full py-3 text-[13.5px]"
+        >
+          Update password
+        </button>
+      </div>
+    </AuthLayout>
   )
 }
 

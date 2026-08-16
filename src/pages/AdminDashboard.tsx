@@ -90,7 +90,8 @@ const handleLogout=async ()=>{
          id:0,
         email:"",
         role:null,
-        user_name:""
+        user_name:"",
+        profile_url:null
     })
     navigate("/admin/login")
   }catch(err){
@@ -108,7 +109,8 @@ const handleLogout=async ()=>{
          id:0,
         email:"",
         role:null,
-        user_name:""
+        user_name:"",
+        profile_url:null
     })
     navigate("/admin/login")
   }catch(err){

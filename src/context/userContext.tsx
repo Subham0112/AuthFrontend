@@ -53,7 +53,7 @@ const UserContext = ({ children }: { children: React.ReactNode }) => {
     const fetchUser = async () => {
       try {
         await fetchFromProfile();
-      } catch (err) {
+      } catch {
         sessionExpire();
       } finally {
         setLoading(false);

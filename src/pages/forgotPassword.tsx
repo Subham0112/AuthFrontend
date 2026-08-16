@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {useNavigate} from 'react-router-dom'
 import axios from 'axios'
-// import Alert from '../components/Alert'
 import type { AlertData } from '../components/Alert';
+import AuthLayout from '../components/AuthLayout';
+import { BsEnvelope } from 'react-icons/bs';
 
 
 
@@ -49,26 +50,43 @@ const handleForgotClick=async ()=>{
 }
 
   return (
-    <div>
-          <div className='w-full h-screen flex items-center justify-center'>
-      <div className='w-[400px] min-h-[200px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
-        <h1 className='text-2xl font-bold'>Forget Password?</h1>
-        <p className='text-sm text-gray-500 font-light '>Enter your registered email for OTP</p>
-        <div className='w-full mt-4'>
-            <div className='mb-4 flex flex-col w-full'>
-                <label htmlFor="email" className='block mb-2'>Email</label>
-                <input 
-                onChange={handleChange}
-                value={email}
-                type="email" placeholder='Email' className='w-full p-2 rounded-md mb-4' />
-            </div>
-            <button
-             onClick={handleForgotClick}
-             className='w-full bg-blue-500 text-white p-2 rounded-md'>Send Otp</button>
+    <AuthLayout
+      eyebrow="Account recovery"
+      title="Forgot your password?"
+      subtitle="Enter the email you registered with — we'll send you a one-time code."
+    >
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="label-luxe">Email</label>
+          <div className="flex items-center gap-2.5 rounded-xl border border-ivory-300 bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:border-sage-600 focus-within:bg-white focus-within:ring-[3px] focus-within:ring-sage-200/70">
+            <BsEnvelope className="text-ink-300 shrink-0" />
+            <input
+              id="email"
+              onChange={handleChange}
+              value={email}
+              type="email"
+              placeholder="you@example.com"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
+          </div>
         </div>
+
+        <button
+          onClick={handleForgotClick}
+          disabled={!email.trim()}
+          className="btn-primary w-full py-3 text-[13.5px]"
+        >
+          Send me an OTP
+        </button>
       </div>
-    </div>
-    </div>
+
+      <div className="mt-7 text-center text-[13px] text-ink-400">
+        Remembered it after all?{" "}
+        <a href="/login" className="font-semibold text-sage-700 transition-colors hover:text-sage-600 hover:underline">
+          Back to log in
+        </a>
+      </div>
+    </AuthLayout>
   )
 }
 

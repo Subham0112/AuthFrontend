@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import skeletonProfile from "../assets/img/skeleton_profile.jpg"
 
 import api from "../lib/axiosInstance"
@@ -67,11 +67,11 @@ const FriendRequest = ({ showRequest }: { showRequest: boolean }) => {
   }
 
   if (loading) {
-    return <p className="text-slate-400 text-sm text-center py-6">Loading friend requests...</p>
+    return <p className="text-ink-400 text-sm text-center py-6">Loading friend requests…</p>
   }
 
   if (friendRequests.length === 0) {
-    return <p className="text-slate-400 text-sm text-center py-6">No friend requests.</p>
+    return <p className="text-ink-400 text-sm text-center py-6">No friend requests.</p>
   }
 
   return (
@@ -79,27 +79,29 @@ const FriendRequest = ({ showRequest }: { showRequest: boolean }) => {
       {friendRequests.map((request) => (
         <div
           key={request.id}
-          className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all"
+          className="flex items-center gap-3 rounded-xl p-3 transition-all duration-150 hover:bg-ivory-100"
         >
           <img
             src={request.req_sender.profile_url || skeletonProfile}
             alt={request.req_sender.user_name}
-            className="w-11 h-11 rounded-full object-cover flex-shrink-0"
+            className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-ivory-400"
           />
-          <span className="flex-1 text-sm font-semibold text-slate-800 truncate">
+          <span className="flex-1 truncate text-sm font-semibold text-ink-800">
             {request.req_sender.user_name}
           </span>
           <button
             onClick={() => handleAccept(request.sender_id)}
-            className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-all"
+            aria-label={`Accept ${request.req_sender.user_name}'s request`}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-sage-100 text-sage-700 transition-all duration-150 hover:bg-sage-700 hover:text-white"
           >
-            <FaCheck size={13} />
+            <FaCheck size={12} />
           </button>
           <button
             onClick={() => handleReject(request.sender_id)}
-            className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all"
+            aria-label={`Reject ${request.req_sender.user_name}'s request`}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-clay-100 text-clay-600 transition-all duration-150 hover:bg-clay-600 hover:text-white"
           >
-            <ImCross size={12} />
+            <ImCross size={11} />
           </button>
         </div>
       ))}

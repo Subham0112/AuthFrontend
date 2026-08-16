@@ -2,9 +2,9 @@ import { useState, useContext } from 'react'
 import { BsEye, BsEyeSlash, BsPerson, BsEnvelope, BsLock } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios"
-// import Alert from '../components/Alert'
 import type { AlertData } from '../components/Alert';
 import { UserDataContext } from '../context/userContext';
+import AuthLayout from '../components/AuthLayout';
 
 interface RegisterData {
     name: string;
@@ -83,95 +83,83 @@ const Register = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<Ale
     }
 
     return (
-        <div className='min-h-screen bg-gradient-to-br from-slate-200  to-blue-250 flex items-center justify-center px-4 py-10'>
-            <div className='w-full max-w-sm bg-white border border-slate-100 shadow-xl shadow-slate-200/60 rounded-2xl p-8 sm:p-9'>
-
-                <div className='mb-8 text-center'>
-                    <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white font-semibold text-lg'>
-                        M
-                    </div>
-                    <h1 className='text-xl font-semibold text-slate-900'>Create your account</h1>
-                    <p className='mt-1 text-sm text-slate-500'>Join MySocialApp in a few seconds</p>
-                </div>
-
-                <div className='space-y-4'>
-                    <div className='space-y-1.5'>
-                        <label htmlFor="name" className="block text-sm font-medium text-slate-700">Name</label>
-                        <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3.5 py-2.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 ${fieldErrors.name ? 'border-red-300' : 'border-slate-200 focus-within:border-blue-400'}`}>
-                            <BsPerson className='text-slate-400 shrink-0' />
-                            <input
-                                id="name"
-                                onChange={handleChange}
-                                value={userRegisterData.name}
-                                name='name'
-                                type="text"
-                                placeholder='Your name'
-                                className='w-full bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-400'
-                            />
-                        </div>
-                        {fieldErrors.name && (
-                            <p className='text-red-500 text-xs'>{fieldErrors.name}</p>
-                        )}
-                    </div>
-
-                    <div className='space-y-1.5'>
-                        <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email</label>
-                        <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3.5 py-2.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 ${fieldErrors.email ? 'border-red-300' : 'border-slate-200 focus-within:border-blue-400'}`}>
-                            <BsEnvelope className='text-slate-400 shrink-0' />
-                            <input
-                                id="email"
-                                onChange={handleChange}
-                                value={userRegisterData.email}
-                                name='email'
-                                type="email"
-                                placeholder='you@example.com'
-                                className='w-full bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-400'
-                            />
-                        </div>
-                        {fieldErrors.email && (
-                            <p className='text-red-500 text-xs'>{fieldErrors.email}</p>
-                        )}
-                    </div>
-
-                    <div className='space-y-1.5'>
-                        <label htmlFor="password" className="block text-sm font-medium text-slate-700">Password</label>
-                        <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3.5 py-2.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 ${fieldErrors.password ? 'border-red-300' : 'border-slate-200 focus-within:border-blue-400'}`}>
-                            <BsLock className='text-slate-400 shrink-0' />
-                            <input
-                                id="password"
-                                onChange={handleChange}
-                                value={userRegisterData.password}
-                                name='password'
-                                type={showPassword ? "text" : "password"}
-                                placeholder="••••••••"
-                                className='w-full bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-400'
-                            />
-                            <button
-                                type='button'
-                                onClick={() => setShowPassword(!showPassword)}
-                                className='text-slate-400 hover:text-slate-700 transition focus:outline-none shrink-0'
-                                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                            >
-                                {showPassword ? <BsEye /> : <BsEyeSlash />}
-                            </button>
-                        </div>
-                        {fieldErrors.password && (
-                            <p className='text-red-500 text-xs'>{fieldErrors.password}</p>
-                        )}
-                    </div>
-
-                    <button
-                        onClick={handleSubmit}
-                        className='w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800'>
-                        Create account
-                    </button>
-                </div>
-
-                <div className='mt-6 text-center text-sm text-slate-500'>
-                    Already have an account? <a href='/login' className='font-medium text-blue-600 hover:text-blue-700'>Login</a>
-                </div>
+        <AuthLayout
+          eyebrow="Join the circle"
+          title="Create your account"
+          subtitle="A few seconds from now you'll have your own place to share."
+        >
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="label-luxe">Name</label>
+              <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.name ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+                <BsPerson className="text-ink-300 shrink-0" />
+                <input
+                  id="name"
+                  onChange={handleChange}
+                  value={userRegisterData.name}
+                  name="name"
+                  type="text"
+                  placeholder="Your name"
+                  className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+                />
+              </div>
+              {fieldErrors.name && <p className="text-xs font-medium text-clay-600">{fieldErrors.name}</p>}
             </div>
-        </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="label-luxe">Email</label>
+              <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.email ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+                <BsEnvelope className="text-ink-300 shrink-0" />
+                <input
+                  id="email"
+                  onChange={handleChange}
+                  value={userRegisterData.email}
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+                />
+              </div>
+              {fieldErrors.email && <p className="text-xs font-medium text-clay-600">{fieldErrors.email}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="label-luxe">Password</label>
+              <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.password ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+                <BsLock className="text-ink-300 shrink-0" />
+                <input
+                  id="password"
+                  onChange={handleChange}
+                  value={userRegisterData.password}
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="At least 6 characters"
+                  className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-ink-300 transition-colors hover:text-ink-800 focus:outline-none shrink-0"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <BsEye /> : <BsEyeSlash />}
+                </button>
+              </div>
+              {fieldErrors.password && <p className="text-xs font-medium text-clay-600">{fieldErrors.password}</p>}
+            </div>
+
+            <button onClick={handleSubmit} className="btn-primary w-full py-3 text-[13.5px]">
+              Create account
+            </button>
+          </div>
+
+          <div className="mt-7 text-center text-[13px] text-ink-400">
+            Already have an account?{" "}
+            <a href="/login" className="font-semibold text-sage-700 transition-colors hover:text-sage-600 hover:underline">
+              Log in
+            </a>
+          </div>
+        </AuthLayout>
     )
 }
 

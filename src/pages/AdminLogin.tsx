@@ -1,11 +1,11 @@
 import { useState, useEffect, useContext } from 'react'
 import type { ChangeEvent } from 'react'
 import { UserDataContext } from '../context/userContext';
-// import Alert from '../components/Alert'
 import type { AlertData } from '../components/Alert';
-import { BsEye,BsEyeSlash } from 'react-icons/bs';
+import { BsEye, BsEyeSlash } from 'react-icons/bs';
 import axios from "axios"
 import { useNavigate } from 'react-router-dom';
+import AuthLayout from '../components/AuthLayout';
 
 
 interface AdminData {
@@ -19,7 +19,6 @@ interface ZodIssue {
 }
 
 const AdminLogin = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
-//   const [alert, setAlert] = useState<AlertData | null>(null)
 const [adminData, setAdminData] = useState<AdminData>({
     email: "",
     password: ""
@@ -115,60 +114,65 @@ const handleSubmit =async ()=>{
     }
 }
   return (
-    <>
-    <div className='w-full h-screen flex items-center justify-center'>
-      <div className='w-[400px] min-h-[400px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
-        
-        <h1 className='text-2xl font-bold'>Admin Login Page</h1>
-        <div className='w-full mt-4'>
-            <div className='mb-2 flex flex-col w-full'>
-                <label htmlFor="email" className='block mb-2'>Email</label>
+    <AuthLayout
+      admin
+      eyebrow="Restricted access"
+      title="Admin sign in"
+      subtitle="A quiet gate for the people who keep ConnectHub safe."
+    >
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="label-luxe">Email</label>
+          <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.email ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
             <input
-             onChange={handleChange}
-             name='email'
-             value={adminData.email}
+              id="email"
+              onChange={handleChange}
+              name="email"
+              value={adminData.email}
+              type="email"
+              placeholder="admin@connecthub.app"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
+          </div>
+          {fieldErrors.email && <p className="text-xs font-medium text-clay-600">{fieldErrors.email}</p>}
+        </div>
 
-            type="email" placeholder='Email' className={`${fieldErrors.email?"border border-red-400": ""} w-full p-2 rounded-md`} />
-            <div className='h-4'>
-            {fieldErrors.email && (
-             <p className='text-red-500 text-xs mt-1'>{fieldErrors.email}</p>
-            )}
-            </div>
-            </div>
-            <div className='mb-2 flex flex-col'> 
-                <label htmlFor="password" className='block mb-2'>Password</label>
-                <div className='flex items-center gap-2'>
-                <input
-                onChange={handleChange}
-                name="password"
-                value={adminData.password}
-                type={showPassword?"text":"password"} placeholder='Password'
-                 className={`${fieldErrors.password?"border border-red-400": ""} w-full p-2 rounded-md`}/>
-                 <span
-                 className='flex items-center h-'
-                 onClick={()=>{
-                 setShowPassword(!showPassword)
-                  }}>{showPassword ? <BsEye />:<BsEyeSlash />}</span>
-                 
-                </div>
-                <div className='h-4'>
-                 {fieldErrors.password && (
-                <p className='text-red-500 text-xs mt-1'>{fieldErrors.password}</p>
-                )}
-                </div>
-            </div>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="label-luxe">Password</label>
+          <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.password ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+            <input
+              id="password"
+              onChange={handleChange}
+              name="password"
+              value={adminData.password}
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
             <button
-            onClick={handleSubmit}
-             className='w-full bg-blue-500 text-white p-2 rounded-md'>Login</button>
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-ink-300 transition-colors hover:text-ink-800 focus:outline-none shrink-0"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <BsEye /> : <BsEyeSlash />}
+            </button>
+          </div>
+          {fieldErrors.password && <p className="text-xs font-medium text-clay-600">{fieldErrors.password}</p>}
         </div>
-        <div className='w-full mt-4 text-center'>
-            <p className='mt-4'>Don't have an account? <a href="/register" className='text-blue-500'>Register</a></p>
-            <p className='mt-2'><a href="/forgot-password" className='text-blue-500'>Forgot Password?</a></p>
-        </div>
+
+        <button onClick={handleSubmit} className="btn-primary w-full py-3 text-[13.5px]">
+          Sign in to console
+        </button>
       </div>
-    </div>
-        
-    </>
+
+      <div className="mt-7 text-center text-[13px] text-ink-400">
+        New to the console?{" "}
+        <a href="/admin/register" className="font-semibold text-sage-700 transition-colors hover:text-sage-600 hover:underline">
+          Request access
+        </a>
+      </div>
+    </AuthLayout>
   )
 }
 

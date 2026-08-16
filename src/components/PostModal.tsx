@@ -7,6 +7,9 @@ import { HiOutlinePhotograph, HiX } from 'react-icons/hi';
 import { BsGlobe, BsLock } from 'react-icons/bs';
 import api from '../lib/axiosInstance';
 
+// Shared type-scale helper for the display face used on names/titles.
+const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
+
 const PostModal = ({
   setAlert,
   onClose,
@@ -75,37 +78,37 @@ const PostModal = ({
   const initials = user?.user_name ? user.user_name.slice(0, 2).toUpperCase() : 'U';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px] p-4">
-      <div className="w-full max-w-[520px] max-h-[90vh] overflow-auto rounded-2xl bg-white shadow-xl border border-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#26241F]/30 backdrop-blur-[2px] p-4">
+      <div className="w-full max-w-[520px] max-h-[90vh] overflow-auto rounded-[18px] bg-white shadow-[0_12px_40px_rgba(38,36,32,0.16)] border border-[#E7E3DA]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-800">Create Post</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EFECE4]">
+          <h2 style={serif} className="text-[17px] font-medium text-[#26241F]">Create Post</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-[#B2AC9C] hover:bg-[#F1EFE9] hover:text-[#6B675C] transition-colors"
           >
-            <HiX size={18} />
+            <HiX size={17} />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-6 space-y-4">
           {/* User row */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-indigo-600 text-xs font-bold">{initials}</span>
+            <div className="w-9 h-9 rounded-full bg-[#F1EFE9] flex items-center justify-center flex-shrink-0">
+              <span className="text-[#6B675C] text-xs font-semibold">{initials}</span>
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-800">{user?.user_name}</p>
+              <p style={serif} className="text-[14.5px] font-medium text-[#26241F]">{user?.user_name}</p>
               {/* Visibility toggle */}
               <button
                 onClick={() => setVisibility(v => v === 'all' ? 'onlyme' : 'all')}
-                className="flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 transition-all text-xs text-slate-600 font-medium"
+                className="flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-[#F1EFE9] hover:bg-[#E7E3DA] transition-colors text-[11px] tracking-wide uppercase text-[#6B675C] font-medium"
               >
                 {visibility === 'all' ? (
-                  <><BsGlobe size={10} /> Public</>
+                  <><BsGlobe size={9} /> Public</>
                 ) : (
-                  <><BsLock size={10} /> Only me</>
+                  <><BsLock size={9} /> Only me</>
                 )}
               </button>
             </div>
@@ -117,16 +120,16 @@ const PostModal = ({
             onChange={(e) => setContent(e.target.value)}
             name="content"
             placeholder={`What's on your mind, ${user?.user_name?.split(' ')[0] || 'you'}?`}
-            className="w-full min-h-[120px] resize-none bg-transparent text-slate-800 text-sm leading-relaxed placeholder:text-slate-300 outline-none border-none focus:ring-0 p-0"
+            className="w-full min-h-[120px] resize-none bg-transparent text-[#2A2822] text-[14.5px] leading-relaxed placeholder:text-[#C4BFB0] outline-none border-none focus:ring-0 p-0"
           />
 
           {/* Image preview */}
           {preview && (
-            <div className="relative rounded-xl overflow-hidden border border-slate-100">
+            <div className="relative rounded-xl overflow-hidden border border-[#E7E3DA]">
               <img src={preview} alt="preview" className="w-full max-h-56 object-cover" />
               <button
                 onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = ''; }}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-all"
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#26241F]/60 text-white flex items-center justify-center hover:bg-[#26241F]/80 transition-colors"
               >
                 <HiX size={14} />
               </button>
@@ -134,15 +137,15 @@ const PostModal = ({
           )}
 
           {/* Divider */}
-          <div className="border-t border-slate-100" />
+          <div className="border-t border-[#EFECE4]" />
 
           {/* Bottom actions */}
           <div className="flex items-center justify-between">
             <label
               htmlFor="file-upload"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer text-slate-500 hover:bg-slate-50 hover:text-indigo-500 transition-all text-sm font-medium"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer text-[#8A8578] hover:bg-[#F7F6F2] hover:text-[#435B52] transition-colors text-[13px] font-medium"
             >
-              <HiOutlinePhotograph size={18} />
+              <HiOutlinePhotograph size={17} />
               <span>Photo</span>
             </label>
             <input
@@ -159,14 +162,14 @@ const PostModal = ({
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition-all"
+                className="px-4 py-2 rounded-xl text-[13px] font-medium text-[#9C978A] hover:bg-[#F1EFE9] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpload}
                 disabled={posting || (!content.trim() && !file)}
-                className="px-5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-sm transition-all duration-150"
+                className="px-5 py-2 rounded-xl bg-[#26241F] hover:bg-[#3A3833] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[13px] font-medium transition-colors duration-150"
               >
                 {posting ? 'Posting…' : 'Post'}
               </button>

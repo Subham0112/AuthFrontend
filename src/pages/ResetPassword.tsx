@@ -2,8 +2,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { BsEye,BsEyeSlash } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
-// import Alert from '../components/Alert'
 import type { AlertData } from '../components/Alert';
+import AuthLayout from '../components/AuthLayout';
 
 
 const ResetPassword = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateAction<AlertData | null>> }) => {
@@ -52,58 +52,74 @@ const ResetPassword = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateActio
     }
 
   return (
-    <div> 
-      <div className='w-full h-screen flex items-center justify-center'>
-      <div className='w-[400px] min-h-[300px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
-        <h1 className='text-2xl font-bold'>Reset Password</h1>
-        <div className='w-full mt-4'>
-            <div className='mb-4 flex flex-col w-full'>
-                <label className='block mb-2'>New Password</label>
-                <div className='flex items-center gap-2'>
+    <AuthLayout
+      eyebrow="Account recovery"
+      title="Set a new password"
+      subtitle="Choose something fresh — you'll use it to sign in from now on."
+    >
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="newPassword" className="label-luxe">New password</label>
+          <div className="flex items-center gap-2.5 rounded-xl border border-ivory-300 bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:border-sage-600 focus-within:bg-white focus-within:ring-[3px] focus-within:ring-sage-200/70">
             <input
-             onChange={(e)=>{
-                setNewPassword(e.target.value)
-             }}
-             name='newPassword'
-             value={newPassword}
-
-            type={showPassword?"text":"password" } placeholder='Enter New Password' className='w-full p-2 rounded-md ' />
-            <span onClick={()=>{
-              setShowPassword(!showPassword)
-            }}>{showPassword ? <BsEye />:<BsEyeSlash />}</span>
-            </div>
-            </div>
-            <div className='mb-4 flex flex-col'> 
-                <label className='block mb-2'>Password</label>
-                <div className='flex items-center gap-2'>
-                <input
-                onChange={(e)=>{
-                    setConfirmPassword(e.target.value)
-                }}
-                name="confirmPassword"
-                value={confirmPassword}
-                type={showConfirmPassword?"text":"password" } placeholder='Confirm Password' className='w-full p-2 rounded-md ' />
-                <span
-                className='flex items-center h-'
-                 onClick={()=>{
-              setShowConfirmPassword(!showConfirmPassword)
-            }}>{showConfirmPassword ? <BsEye />:<BsEyeSlash />}</span>
-            </div>
-            </div>
-            <div className='flex flex-col w-full gap-2'>
+              id="newPassword"
+              onChange={(e) => setNewPassword(e.target.value)}
+              name="newPassword"
+              value={newPassword}
+              type={showPassword ? "text" : "password"}
+              placeholder="At least 6 characters"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
             <button
-            onClick={handleSubmit}
-             className='w-full bg-blue-500 text-white p-2 rounded-md'>Reset Password</button>
-            <button
-            onClick={()=>{
-              navigate("/login")
-            }}
-             className='w-full bg-red-500 text-white p-2 rounded-md'>Cancel</button>
-             </div>
-         </div>
-       </div>
-     </div>
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-ink-300 transition-colors hover:text-ink-800 focus:outline-none shrink-0"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <BsEye /> : <BsEyeSlash />}
+            </button>
+          </div>
         </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="confirmPassword" className="label-luxe">Confirm password</label>
+          <div className="flex items-center gap-2.5 rounded-xl border border-ivory-300 bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:border-sage-600 focus-within:bg-white focus-within:ring-[3px] focus-within:ring-sage-200/70">
+            <input
+              id="confirmPassword"
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              name="confirmPassword"
+              value={confirmPassword}
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Repeat the new password"
+              className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="text-ink-300 transition-colors hover:text-ink-800 focus:outline-none shrink-0"
+              aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+            >
+              {showConfirmPassword ? <BsEye /> : <BsEyeSlash />}
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!newPassword || !confirmPassword}
+          className="btn-primary w-full py-3 text-[13.5px]"
+        >
+          Reset password
+        </button>
+
+        <button
+          onClick={() => navigate("/login")}
+          className="btn-ghost w-full py-2.5"
+        >
+          Cancel
+        </button>
+      </div>
+    </AuthLayout>
   )
 }
 

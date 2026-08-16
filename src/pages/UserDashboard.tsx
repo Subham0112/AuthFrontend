@@ -17,12 +17,23 @@ import EditModal from "../components/EditModal";
 import PostModal from "../components/PostModal";
 import ProfileUploadModal from "../components/ProfileModal";
 import Navbar from "../components/Navbar";
-import { BsGlobe, BsLock } from "react-icons/bs";
-import { HiOutlinePencilAlt } from "react-icons/hi";
+import {
+  BsGlobe,
+  BsLock,
+  BsHeart,
+  BsPeople,
+  BsEnvelopeFill,
+} from "react-icons/bs";
+import {
+  HiOutlinePencilAlt,
+  HiOutlinePhotograph,
+  HiOutlineLockClosed,
+} from "react-icons/hi";
 import skeletonProfile from "../assets/img/skeleton_profile.jpg";
 import { RiLogoutBoxLine } from "react-icons/ri";
-import { MdOutlineDeleteOutline, MdOutlineAddAPhoto } from "react-icons/md";
+import { MdOutlineDeleteOutline } from "react-icons/md";
 import FriendList from "../components/FriendList";
+import ConfirmModal from "../components/ConfirmModal";
 
 interface Media {
   media_id: number;
@@ -49,6 +60,61 @@ export interface PostData {
   likedByCurrentUser: boolean;
 }
 
+interface FriendUser {
+  id: number;
+  user_name: string;
+  profile_url?: string | null;
+}
+interface FriendRecord {
+  friends_id: number;
+  sender_id: number;
+  receiver_id: number;
+  friend_status: string;
+  req_sender: FriendUser;
+  req_receiver: FriendUser;
+}
+
+const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
+
+const SideCard = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="card-luxe p-5 mb-5">
+    <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-ink-300">
+      {title}
+    </h3>
+    {children}
+  </div>
+);
+
+const StatStrip = ({
+  items,
+}: {
+  items: { label: string; value: number }[];
+}) => (
+  <div className="flex items-center gap-6 sm:gap-10">
+    {items.map((s, i) => (
+      <div key={s.label} className="flex items-baseline gap-2">
+        <span
+          style={serif}
+          className="text-[20px] font-medium leading-none text-ink-900"
+        >
+          {s.value.toLocaleString()}
+        </span>
+        <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-400">
+          {s.label}
+        </span>
+        {i < items.length - 1 && (
+          <span className="ml-4 hidden h-4 w-px bg-ivory-300 sm:block" />
+        )}
+      </div>
+    ))}
+  </div>
+);
 
 const UserDashboard = ({
   setAlert,
@@ -58,14 +124,17 @@ const UserDashboard = ({
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [showFriendList, setShowFriendList] = useState<boolean>(false);
-  const [showPosts,setShowPosts] = useState<boolean>(true);
+  const [showPosts, setShowPosts] = useState<boolean>(true);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [likesPostId, setLikesPostId] = useState<number | null>(null);
   const [posts, setPosts] = useState<PostData[]>([]);
+  const [friends, setFriends] = useState<FriendRecord[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const context = useContext(UserDataContext);
 
@@ -74,15 +143,24 @@ const UserDashboard = ({
     const { user } = context;
     const fetchUserPosts = async () => {
       try {
-        const res = await api.get(
-          `/get-post/${user.id}`
-        );
+        const res = await api.get(`/get-post/${user.id}`);
         setPosts(res.data.posts);
       } catch (err) {
         console.log("Error fetching posts", err);
       }
     };
-    if (user.id) fetchUserPosts();
+    const fetchFriends = async () => {
+      try {
+        const res = await api.get(`/allFriends`);
+        if (res.status === 200) setFriends(res.data.friends);
+      } catch (error) {
+        console.error("Error fetching friends:", error);
+      }
+    };
+    if (user.id) {
+      fetchUserPosts();
+      fetchFriends();
+    }
   }, [context]);
 
   if (!context) return null;
@@ -90,12 +168,15 @@ const UserDashboard = ({
 
   const handleLogoutFromAll = async () => {
     try {
-      const res = await api.patch(
-        `/logout-from-all`,
-        {}
-      );
+      const res = await api.patch(`/logout-from-all`, {});
       console.log(res.data.message);
-      setUser({ id: 0, email: "", role: null, user_name: "", profile_url: null });
+      setUser({
+        id: 0,
+        email: "",
+        role: null,
+        user_name: "",
+        profile_url: null,
+      });
       navigate("/login");
     } catch (err) {
       console.error("Error logging out", err);
@@ -104,10 +185,14 @@ const UserDashboard = ({
 
   const handleDeleteAccount = async (id: number) => {
     try {
-      await api.delete(
-        `/deleteUser/${id}`
-      );
-      setUser({ id: 0, email: "", role: null, user_name: "", profile_url: null });
+      await api.delete(`/deleteUser/${id}`);
+      setUser({
+        id: 0,
+        email: "",
+        role: null,
+        user_name: "",
+        profile_url: null,
+      });
       navigate("/login");
     } catch (err) {
       console.log("Error deleting users", err);
@@ -116,10 +201,7 @@ const UserDashboard = ({
 
   const handleLikeToggle = async (postId: number) => {
     try {
-      const res = await api.post(
-        `/toggle-like/${postId}`,
-        {}
-      );
+      const res = await api.post(`/toggle-like/${postId}`, {});
       setPosts((prev) =>
         prev.map((post) => {
           if (post.id !== postId) return post;
@@ -129,30 +211,43 @@ const UserDashboard = ({
             likedByCurrentUser: res.data.liked,
             likeCount: res.data.liked ? currentCount + 1 : currentCount - 1,
           };
-        })
+        }),
       );
     } catch (err) {
       console.log("Error toggling like", err);
     }
   };
 
-  const totalLikes = posts.reduce((sum, post) => sum + (post.likeCount ?? 0), 0);
+  const totalLikes = posts.reduce(
+    (sum, post) => sum + (post.likeCount ?? 0),
+    0,
+  );
 
   const handlePostDelete = async (id: number) => {
     try {
-      const res = await api.delete(
-        `/delete-post/${id}`
-      );
+      const res = await api.delete(`/delete-post/${id}`);
       console.log(res.data.message);
       setPosts((prev) => prev.filter((post) => post.id !== id));
-      setAlert({ type: "success", title: "Post Deleted", message: res.data.message });
+      setAlert({
+        type: "success",
+        title: "Post Deleted",
+        message: res.data.message,
+      });
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const data = err.response?.data;
         if (data?.message)
-          setAlert({ type: "error", title: "Error Deleting", message: data.message });
+          setAlert({
+            type: "error",
+            title: "Error Deleting",
+            message: data.message,
+          });
       } else {
-        setAlert({ type: "error", title: "Error", message: "Error deleting post" });
+        setAlert({
+          type: "error",
+          title: "Error",
+          message: "Error deleting post",
+        });
       }
     }
   };
@@ -163,236 +258,479 @@ const UserDashboard = ({
 
   const profileUrl = user.profile_url;
 
+  const otherFriends = friends.map((record) =>
+    record.sender_id === user.id ? record.req_receiver : record.req_sender,
+  );
+
   return (
-    <div className="min-h-screen bg-[#F8F9FB]">
+    <div className="min-h-screen bg-ivory-100 text-ink-800">
       <Navbar />
 
-      <div className="max-w-[680px] mx-auto px-4 pt-8 pb-16">
+      <div className="mx-auto max-w-[1080px] px-3 pb-24 pt-6 sm:px-6 sm:pt-8">
+        {/* ════════ Profile header ════════ */}
+        <div className="card-luxe mb-6 rounded-3xl sm:mb-8">
+          {/* Cover */}
+          <div className="relative h-40 overflow-hidden rounded-t-3xl bg-gradient-to-br from-sage-200 via-sage-100 to-gold-100 sm:h-44">
+            <div
+              className="absolute inset-0 opacity-[0.35]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, #7A9487 1px, transparent 0)",
+                backgroundSize: "24px 24px",
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent" />
+            <div className="absolute -left-10 -top-14 h-44 w-44 rounded-full bg-white/20 blur-md" />
+            <div className="absolute -bottom-16 right-8 h-40 w-40 rounded-full bg-gold-500/20 blur-lg" />
+          </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
-          <div className="h-24 bg-gradient-to-r from-indigo-100 via-violet-50 to-sky-100" />
-
-          <div className="px-6 pb-6">
-            <div className="flex items-end justify-between -mt-10 mb-4">
-
-              <div className="relative group cursor-pointer" onClick={() => setShowProfileModal(true)}>
-                
-                  <img
-                    src={profileUrl || skeletonProfile}
-                    alt="profile"
-                    className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md"
+          {/* Avatar row — overlaps the cover, nothing else */}
+          <div className="px-5 sm:px-8">
+            <div className="-mt-12 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 sm:-mt-14">
+              <div
+                onClick={() => setShowProfileModal(true)}
+                className="group relative shrink-0 cursor-pointer"
+              >
+                <img
+                  src={profileUrl || skeletonProfile}
+                  alt={user.user_name || "User"}
+                  className="h-28 w-28 rounded-2xl border-4 border-white object-cover shadow-[0_8px_24px_rgba(31,29,26,0.18)]"
+                />
+                <span className="absolute inset-0 flex items-center justify-center rounded-2xl transition-colors duration-150 group-hover:bg-ink-900/35">
+                  <HiOutlinePhotograph
+                    size={22}
+                    className="text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100"
                   />
-                
-                <div className="absolute inset-0 rounded-2xl bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-150">
-                  <MdOutlineAddAPhoto size={22} className="text-white" />
-                </div>
+                </span>
               </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
                 <button
                   onClick={() => setShowProfileModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold shadow-sm transition-all duration-150"
+                  className="btn-outline px-4 py-2.5"
                 >
-                  <MdOutlineAddAPhoto size={14} />
-                  {profileUrl ? "Update photo" : "Add photo"}
+                  <HiOutlinePhotograph size={13} />
+                  <span className="hidden sm:inline">
+                    {profileUrl ? "Update photo" : "Add photo"}
+                  </span>
+                  <span className="sm:hidden">Photo</span>
                 </button>
                 <button
                   onClick={() => setShowModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold shadow-sm transition-all duration-150"
+                  className="btn-primary px-4 py-2.5"
                 >
-                  <HiOutlinePencilAlt size={15} />
+                  <HiOutlinePencilAlt size={14} />
                   New Post
                 </button>
               </div>
             </div>
 
-            {/* Name + email */}
-            <div className="mb-5">
-              <h2 className="text-xl font-bold text-slate-800">{user?.user_name || "User"}</h2>
-              <p className="text-sm text-slate-400 mt-0.5">{user?.email}</p>
+            {/* Name block — plain normal flow, can never be clipped */}
+            <div className="pb-6 pt-4">
+              <h1
+                style={serif}
+                className="text-[26px] font-medium leading-snug tracking-tight text-ink-900 sm:text-[30px]"
+              >
+                {user?.user_name || "User"}
+              </h1>
+              <p className="mt-1.5 flex items-center gap-2 text-[13px] text-ink-400">
+                <BsEnvelopeFill size={13} className="shrink-0 text-sage-600" />
+                <span className="break-words">{user?.email || ""}</span>
+              </p>
             </div>
 
-            {/* Stats */}
-            <div className="flex gap-3 mb-5">
-              <div className="flex flex-col items-center justify-center bg-gradient-to-r from-indigo-100 via-violet-50 to-sky-100 rounded-2xl shadow-md px-4 py-3 gap-1 min-w-[200px]">
-                <span className="text-2xl font-bold text-slate-800">{totalLikes}</span>
-                <span className="text-xs text-slate-400 font-medium tracking-wide uppercase">Likes</span>
-              </div>
-              <div className="flex flex-col items-center justify-center bg-gradient-to-r from-indigo-100 via-violet-50 to-sky-100 rounded-2xl shadow-md px-4 py-3 gap-1 min-w-[200px]">
-                <span className="text-2xl font-bold text-slate-800">{posts.length}</span>
-                <span className="text-xs text-slate-400 font-medium tracking-wide uppercase">Posts</span>
-              </div>
+            {/* Stats strip + tabs */}
+            <div className="border-t border-ivory-300 px-5 py-5 sm:px-0 sm:pl-0">
+              <StatStrip
+                items={[
+                  { label: "Posts", value: posts.length },
+                  { label: "Likes", value: totalLikes },
+                  { label: "Friends", value: otherFriends.length },
+                ]}
+              />
             </div>
 
-            {/* Danger actions */}
-            <div className="flex gap-2 pt-4 border-t border-slate-50">
+            <div className="flex items-center gap-1 border-t border-ivory-300 px-5 sm:px-7">
               <button
-                onClick={handleLogoutFromAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 text-sm font-medium transition-all duration-150"
-              >
-                <RiLogoutBoxLine size={15} />
-                Logout all devices
-              </button>
-              <button
-                onClick={() => handleDeleteAccount(user.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 text-sm font-medium transition-all duration-150"
-              >
-                <MdOutlineDeleteOutline size={16} />
-                Delete account
-              </button>
-               <button
                 onClick={() => {
-                  navigate("/change-password")
+                  setShowPosts(true);
+                  setShowFriendList(false);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 text-sm font-medium transition-all duration-150"
+                className={`relative px-4 py-3.5 text-[13.5px] font-bold transition-colors duration-150 ${
+                  showPosts
+                    ? "text-sage-700"
+                    : "text-ink-300 hover:text-ink-600"
+                }`}
               >
-                <MdOutlineDeleteOutline size={16} />
-              Change Password              
-              </button>
-            </div>
-            <div className="flex gap-2 pt-4 border-t border-slate-50 mt-3">
-                <button
-                onClick={() =>{ 
-                  setShowPosts(true)
-                  setShowFriendList(false)}}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 text-sm font-medium transition-all duration-150"
-              >
-               Show Posts 
+                Posts
+                <span className="ml-1.5 text-[11px] font-semibold text-ink-300">
+                  {posts.length}
+                </span>
+                {showPosts && (
+                  <span className="absolute inset-x-3 bottom-0 h-[2.5px] rounded-full bg-sage-600" />
+                )}
               </button>
               <button
-                onClick={() =>{ 
-                  setShowFriendList(true)
-                  setShowPosts(false)}}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 text-sm font-medium transition-all duration-150"
+                onClick={() => {
+                  setShowFriendList(true);
+                  setShowPosts(false);
+                }}
+                className={`relative px-4 py-3.5 text-[13.5px] font-bold transition-colors duration-150 ${
+                  showFriendList
+                    ? "text-sage-700"
+                    : "text-ink-300 hover:text-ink-600"
+                }`}
               >
-               Show Friends 
+                Friends
+                <span className="ml-1.5 text-[11px] font-semibold text-ink-300">
+                  {otherFriends.length}
+                </span>
+                {showFriendList && (
+                  <span className="absolute inset-x-3 bottom-0 h-[2.5px] rounded-full bg-sage-600" />
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        {showPosts && <div>
-          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-4 px-1">
-            Your Posts
-          </h3>
-
-        {  posts.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-              <p className="text-slate-400 text-sm">You haven't posted anything yet.</p>
-              <button
-                onClick={() => setShowModal(true)}
-                className="mt-4 px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 text-sm font-semibold hover:bg-indigo-100 transition-all"
-              >
-                Create your first post
-              </button>
+        {/* ════════ Body: two columns ════════ */}
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+          {/* Left column — scrolls naturally with the page */}
+          <aside className="w-full shrink-0 lg:w-[300px]">
+            {/* At a glance */}
+            <div className="card-luxe mb-5 p-5">
+              <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-ink-300">
+                At a glance
+              </h3>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between rounded-xl bg-ivory-100 px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-clay-100 text-clay-600">
+                      <BsHeart size={13} />
+                    </span>
+                    <span className="text-[12.5px] font-bold uppercase tracking-wide text-ink-400">
+                      Likes
+                    </span>
+                  </div>
+                  <span
+                    style={serif}
+                    className="text-xl font-medium text-ink-900"
+                  >
+                    {totalLikes.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-xl bg-ivory-100 px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sage-100 text-sage-700">
+                      <HiOutlinePencilAlt size={13} />
+                    </span>
+                    <span className="text-[12.5px] font-bold uppercase tracking-wide text-ink-400">
+                      Posts
+                    </span>
+                  </div>
+                  <span
+                    style={serif}
+                    className="text-xl font-medium text-ink-900"
+                  >
+                    {posts.length.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-xl bg-ivory-100 px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-50 text-gold-600">
+                      <BsPeople size={14} />
+                    </span>
+                    <span className="text-[12.5px] font-bold uppercase tracking-wide text-ink-400">
+                      Friends
+                    </span>
+                  </div>
+                  <span
+                    style={serif}
+                    className="text-xl font-medium text-ink-900"
+                  >
+                    {otherFriends.length.toLocaleString()}
+                  </span>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+
+            {/* Shortcuts */}
+            <SideCard title="Shortcuts">
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-ink-600 transition-colors duration-150 hover:bg-sage-100 hover:text-sage-700"
                 >
-                  <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      
+                  <HiOutlinePencilAlt size={17} />
+                  Write a post
+                </button>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-ink-600 transition-colors duration-150 hover:bg-sage-100 hover:text-sage-700"
+                >
+                  <HiOutlinePhotograph size={17} />
+                  Update photo
+                </button>
+                <button
+                  onClick={() => navigate("/change-password")}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-ink-600 transition-colors duration-150 hover:bg-sage-100 hover:text-sage-700"
+                >
+                  <HiOutlineLockClosed size={17} />
+                  Change password
+                </button>
+                <button
+                  onClick={() => setShowLogoutModal(true)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-ink-600 transition-colors duration-150 hover:bg-gold-50 hover:text-gold-700"
+                >
+                  <RiLogoutBoxLine size={17} />
+                  Logout all devices
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-ink-600 transition-colors duration-150 hover:bg-clay-100 hover:text-clay-600"
+                >
+                  <MdOutlineDeleteOutline size={17} />
+                  Delete account
+                </button>
+              </div>
+            </SideCard>
+
+            {/* Friends preview */}
+            <SideCard title="Friends preview">
+              {otherFriends.length === 0 ? (
+                <p className="text-[13px] leading-relaxed text-ink-400">
+                  Make some friends — they'll show up here.
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    {otherFriends.slice(0, 9).map((f) => (
+                      <div
+                        key={f.id}
+                        onClick={() => navigate(`/users/${f.id}`)}
+                        className="group cursor-pointer overflow-hidden rounded-xl bg-ivory-100 transition-all duration-200 hover:shadow-luxe"
+                      >
                         <img
-                          src={profileUrl || skeletonProfile}
-                          alt="profile"
-                          className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-100"
+                          src={f.profile_url || skeletonProfile}
+                          alt={f.user_name}
+                          className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                      
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{post.users?.user_name}</p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {post.visiblity === "all" ? (
-                            <BsGlobe className="text-slate-400" size={10} />
-                          ) : (
-                            <BsLock className="text-slate-400" size={10} />
+                      </div>
+                    ))}
+                  </div>
+                  {otherFriends.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setShowFriendList(true);
+                        setShowPosts(false);
+                      }}
+                      className="mt-3 w-full rounded-xl bg-ivory-100 py-2 text-[12.5px] font-bold text-sage-700 transition-colors duration-150 hover:bg-sage-100"
+                    >
+                      View all {otherFriends.length} friends
+                    </button>
+                  )}
+                </>
+              )}
+            </SideCard>
+          </aside>
+
+          {/* Right column */}
+          <main className="min-w-0 flex-1">
+            {showPosts && (
+              <div>
+                <h3 className="mb-4 px-1 text-[11px] font-bold uppercase tracking-[0.2em] text-ink-300">
+                  Your Posts
+                </h3>
+
+                {posts.length === 0 ? (
+                  <div className="card-luxe p-12 text-center">
+                    <p
+                      style={serif}
+                      className="mb-4 text-lg italic text-ink-500"
+                    >
+                      You haven't posted anything yet
+                    </p>
+                    <button
+                      onClick={() => setShowModal(true)}
+                      className="btn-primary px-5 py-2.5"
+                    >
+                      <HiOutlinePencilAlt size={14} />
+                      Create your first post
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-6">
+                    {posts.map((post) => (
+                      <div
+                        key={post.id}
+                        className="card-luxe card-hover overflow-hidden"
+                      >
+                        <div className="flex items-center justify-between px-6 pt-6 pb-4 sm:px-7">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <img
+                              src={profileUrl || skeletonProfile}
+                              alt={user.user_name}
+                              className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-ivory-400"
+                            />
+                            <div className="min-w-0">
+                              <p
+                                style={serif}
+                                className="truncate text-[15px] font-medium text-ink-900"
+                              >
+                                {post.users?.user_name}
+                              </p>
+                              <div className="mt-1 flex items-center gap-1.5">
+                                {post.visiblity === "all" ? (
+                                  <BsGlobe
+                                    className="shrink-0 text-ink-300"
+                                    size={9}
+                                  />
+                                ) : (
+                                  <BsLock
+                                    className="shrink-0 text-ink-300"
+                                    size={9}
+                                  />
+                                )}
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
+                                  {post.visiblity === "all"
+                                    ? "Public"
+                                    : "Only me"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setSelectedPost(post);
+                                setShowEditModal(true);
+                              }}
+                              className="icon-btn"
+                              aria-label="Edit post"
+                            >
+                              <FaRegEdit size={13} />
+                            </button>
+                            <button
+                              onClick={() => handlePostDelete(post.id)}
+                              className="icon-btn hover:bg-clay-100 hover:text-clay-600"
+                              aria-label="Delete post"
+                            >
+                              <FaRegTrashAlt size={13} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {post.content && (
+                          <div className="px-6 pb-4 sm:px-7">
+                            <p className="text-[14.5px] leading-relaxed text-ink-700 whitespace-pre-wrap">
+                              {post.content}
+                            </p>
+                          </div>
+                        )}
+
+                        {post.media &&
+                          post.media.filter(Boolean).length > 0 && (
+                            <div className="mt-1 border-t border-ivory-300 bg-ivory-200">
+                              {post.media.filter(Boolean).map((media) => (
+                                <img
+                                  key={media.media_id}
+                                  src={media.file_url}
+                                  alt="post media"
+                                  className="w-full max-h-[420px] object-cover"
+                                />
+                              ))}
+                            </div>
                           )}
-                          <span className="text-[11px] text-slate-400 capitalize">
-                            {post.visiblity === "all" ? "Public" : "Only me"}
-                          </span>
+
+                        <div className="flex gap-2 items-center border-t border-ivory-300 px-4 py-1">
+                          <button
+                            onClick={() => handleLikeToggle(post.id)}
+                            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-[13px] font-semibold transition-colors duration-150 ${
+                              post.likedByCurrentUser
+                                ? "bg-sage-100 text-sage-700"
+                                : "text-ink-500 hover:bg-ivory-100 hover:text-ink-900"
+                            }`}
+                          >
+                            {post.likedByCurrentUser ? (
+                              <FaThumbsUp size={13} />
+                            ) : (
+                              <FaRegThumbsUp size={13} />
+                            )}
+                            {post.likeCount > 0 ? (
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLikesPostId(post.id);
+                                  setShowLikesModal(true);
+                                }}
+                                className="cursor-pointer hover:underline"
+                              >
+                                {post.likeCount} Like
+                              </span>
+                            ) : (
+                              <span>Like</span>
+                            )}
+                          </button>
+                          <div className="h-5 w-px bg-ivory-300" />
+                          <button
+                            onClick={() => {
+                              setSelectedPost(post);
+                              setShowCommentModal(true);
+                            }}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-[13px] font-semibold text-ink-500 transition-colors duration-150 hover:bg-ivory-100 hover:text-ink-900"
+                          >
+                            <FaRegComment size={13} />
+                            <span>
+                              {post.commentCount > 0 ? post.commentCount : ""}{" "}
+                              Comment
+                            </span>
+                          </button>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => { setSelectedPost(post); setShowEditModal(true); }}
-                        className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 transition-all"
-                      >
-                        <FaRegEdit size={14} />
-                      </button>
-                      <button
-                        onClick={() => handlePostDelete(post.id)}
-                        className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                      >
-                        <FaRegTrashAlt size={14} />
-                      </button>
-                    </div>
+                    ))}
                   </div>
+                )}
+              </div>
+            )}
 
-                  {post.content && (
-                    <div className="px-5 pb-3">
-                      <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
-                        {post.content}
-                      </p>
-                    </div>
-                  )}
-
-                  {post.media && post.media.filter(Boolean).length > 0 && (
-                    <div className="mt-1">
-                      {post.media.filter(Boolean).map((media) => (
-                        <img
-                          key={media.media_id}
-                          src={media.file_url}
-                          alt="post media"
-                          className="w-full max-h-[420px] object-cover"
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="px-5 py-1 border-t border-slate-50 flex items-center">
-                    <button
-                      onClick={() => handleLikeToggle(post.id)}
-                      className={`flex items-center gap-1.5 flex-1 justify-center py-2.5 rounded-xl text-sm font-medium transition-all duration-150
-                        ${post.likedByCurrentUser
-                          ? "text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-                        }`}
-                    >
-                      {post.likedByCurrentUser ? <FaThumbsUp size={15} /> : <FaRegThumbsUp size={15} />}
-                      {post.likeCount > 0 ? (
-                        <span
-                          onClick={(e) => { e.stopPropagation(); setLikesPostId(post.id); setShowLikesModal(true); }}
-                          className="hover:underline cursor-pointer"
-                        >
-                          {post.likeCount}{" "} Like
-                        </span>
-                      ) : null}
-                      
-                    </button>
-                    <div className="w-px h-5 bg-slate-100" />
-                    <button
-                      onClick={() => { setSelectedPost(post); setShowCommentModal(true); }}
-                      className="flex items-center gap-1.5 flex-1 justify-center py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-all duration-150"
-                    >
-                      <FaRegComment size={14} />
-                      <span>{post.commentCount > 0 ? post.commentCount : ""} Comment</span>
-                    </button>
-                  </div>
+            {showFriendList && (
+              <div>
+                <div className="mb-4 flex items-center justify-between px-1">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-ink-300">
+                    All Friends
+                  </h3>
+                  <span className="chip bg-ivory-200 text-ink-500">
+                    {otherFriends.length} friends
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>}
-
-          { showFriendList && <FriendList setAlert={setAlert} showFriend={showFriendList} />}
+                <FriendList setAlert={setAlert} showFriend={showFriendList} />
+              </div>
+            )}
+          </main>
+        </div>
       </div>
 
       {/* ── Modals ── */}
+      {showLogoutModal && (
+        <ConfirmModal
+          title="Log out everywhere"
+          message="This will sign you out from all devices you're currently logged in on. Continue?"
+          confirmLabel="Log out all devices"
+          loading={false}
+          onConfirm={handleLogoutFromAll}
+          onClose={() => setShowLogoutModal(false)}
+        />
+      )}
+      {showDeleteModal && (
+        <ConfirmModal
+          title="Delete account"
+          message="This permanently deletes your ConnectHub account, profile, posts, and all your data. This action cannot be undone."
+          confirmLabel="Delete account"
+          loading={false}
+          onConfirm={() => handleDeleteAccount(user.id)}
+          onClose={() => setShowDeleteModal(false)}
+        />
+      )}
       {showProfileModal && (
         <ProfileUploadModal
           currentProfileUrl={profileUrl}
@@ -405,18 +743,28 @@ const UserDashboard = ({
         <LikeModal
           postId={likesPostId}
           likeCount={posts.find((p) => p.id === likesPostId)?.likeCount ?? 0}
-          onClose={() => { setShowLikesModal(false); setLikesPostId(null); }}
+          onClose={() => {
+            setShowLikesModal(false);
+            setLikesPostId(null);
+          }}
         />
       )}
       {showModal && (
-        <PostModal setPosts={setPosts} setAlert={setAlert} onClose={() => setShowModal(false)} />
+        <PostModal
+          setPosts={setPosts}
+          setAlert={setAlert}
+          onClose={() => setShowModal(false)}
+        />
       )}
       {showEditModal && selectedPost && (
         <EditModal
           post={selectedPost}
           setPosts={setPosts}
           setAlert={setAlert}
-          onClose={() => { setShowEditModal(false); setSelectedPost(null); }}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedPost(null);
+          }}
         />
       )}
       {showCommentModal && selectedPost && (
@@ -425,12 +773,20 @@ const UserDashboard = ({
           setAlert={setAlert}
           onCommentAdded={() =>
             setPosts((prev) =>
-              prev.map((p) => p.id === selectedPost.id ? { ...p, commentCount: p.commentCount + 1 } : p)
+              prev.map((p) =>
+                p.id === selectedPost.id
+                  ? { ...p, commentCount: p.commentCount + 1 }
+                  : p,
+              ),
             )
           }
           onCommentDelete={() =>
             setPosts((prev) =>
-              prev.map((p) => p.id === selectedPost.id ? { ...p, commentCount: p.commentCount - 1 } : p)
+              prev.map((p) =>
+                p.id === selectedPost.id
+                  ? { ...p, commentCount: p.commentCount - 1 }
+                  : p,
+              ),
             )
           }
           onClose={() => setShowCommentModal(false)}

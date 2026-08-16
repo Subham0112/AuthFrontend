@@ -56,34 +56,36 @@ const ProfileUploadModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px] p-4">
-      <div className="w-full max-w-[400px] rounded-2xl bg-white shadow-xl border border-slate-100 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/30 p-4 backdrop-blur-[2px] animate-fade-in">
+      <div className="w-full max-w-[400px] animate-scale-in overflow-hidden rounded-2xl border border-ivory-400 bg-white shadow-lift">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-800">
+        <div className="flex items-center justify-between border-b border-ivory-300 px-5 py-4">
+          <h2 className="font-display text-[16px] font-medium text-ink-900">
             {currentProfileUrl ? "Update Profile Picture" : "Upload Profile Picture"}
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
+            className="icon-btn"
+            aria-label="Close"
           >
-            <HiX size={18} />
+            <HiX size={16} />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 p-5">
           <div className="flex flex-col items-center gap-3">
             {preview ? (
               <div className="relative">
                 <img
                   src={preview}
                   alt="preview"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-indigo-100 shadow-md"
+                  className="h-32 w-32 rounded-full border-4 border-sage-200 object-cover shadow-luxe"
                 />
                 <button
                   onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = ""; }}
-                  className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-slate-900 transition-all shadow"
+                  className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-ink-900 text-white shadow transition-all hover:bg-ink-700"
+                  aria-label="Remove preview"
                 >
                   <HiX size={12} />
                 </button>
@@ -92,16 +94,16 @@ const ProfileUploadModal = ({
               <img
                 src={currentProfileUrl}
                 alt="current profile"
-                className="w-32 h-32 rounded-full object-cover border-4 border-indigo-100 shadow-md opacity-60"
+                className="h-32 w-32 rounded-full border-4 border-sage-200 object-cover opacity-60 shadow-luxe"
               />
             ) : (
-              <div className="w-32 h-32 rounded-full bg-indigo-50 border-4 border-indigo-100 flex items-center justify-center shadow-inner">
-                <RiUser3Line size={48} className="text-indigo-200" />
+              <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-sage-100 bg-sage-50">
+                <RiUser3Line size={48} className="text-sage-300" />
               </div>
             )}
 
             {!preview && (
-              <p className="text-xs text-slate-400 text-center">
+              <p className="text-center text-xs text-ink-400">
                 {currentProfileUrl
                   ? "Choose a new photo to replace your current one"
                   : "No profile picture yet — upload one below"}
@@ -111,7 +113,7 @@ const ProfileUploadModal = ({
 
           <label
             htmlFor="profile-upload"
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer text-sm text-slate-500 font-medium transition-all"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-ivory-400 bg-ivory-100 py-2.5 text-sm font-semibold text-ink-500 transition-all duration-150 hover:border-sage-500 hover:bg-sage-50 hover:text-sage-700"
           >
             <HiOutlinePhotograph size={18} />
             Choose from gallery
@@ -129,14 +131,14 @@ const ProfileUploadModal = ({
           <div className="flex gap-2 pt-1">
             <button
               onClick={onClose}
-              className="flex-1 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition-all"
+              className="btn-ghost flex-1 py-2.5"
             >
               Cancel
             </button>
             <button
               onClick={handleUpload}
               disabled={!file || uploading}
-              className="flex-1 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-sm transition-all duration-150"
+              className="btn-primary flex-1 py-2.5"
             >
               {uploading ? "Uploading…" : "Save"}
             </button>

@@ -4,6 +4,7 @@ import type { PostData } from '../pages/UserDashboard';
 // import Alert from './Alert';
 import axios from 'axios';
 import type { AlertData } from './Alert';
+import { HiX } from 'react-icons/hi';
 
 interface Props {
   post: PostData;
@@ -11,6 +12,9 @@ interface Props {
   setAlert: React.Dispatch<React.SetStateAction<AlertData | null>>;
   onClose: () => void;
 }
+
+// Shared type-scale helper for the display face used on titles.
+const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
 
 const EditModal = ({ post, setAlert, onClose, setPosts }: Props) => {
   const [content, setContent] = useState<string>('');
@@ -73,25 +77,25 @@ const EditModal = ({ post, setAlert, onClose, setPosts }: Props) => {
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
-      <div className='w-[80%] sm:w-[70%]  max-h-[80%] overflow-auto rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-200'>
-        <div className='mb-4 flex items-center justify-between'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-[#26241F]/30 backdrop-blur-[2px] p-4'>
+      <div className='w-full sm:w-[560px] max-h-[85vh] overflow-auto rounded-[18px] bg-white shadow-[0_12px_40px_rgba(38,36,32,0.16)] border border-[#E7E3DA]'>
+        <div className='flex items-center justify-between px-6 py-4 border-b border-[#EFECE4]'>
           <div>
-            <h2 className='text-xl font-semibold text-slate-900'>Edit Post</h2>
-            <p className='text-sm text-slate-500'>Edit content and visibility. Media is shown but not editable.</p>
+            <h2 style={serif} className='text-[17px] font-medium text-[#26241F]'>Edit Post</h2>
+            <p className='text-[12.5px] text-[#9C978A] mt-0.5'>Media is shown but not editable</p>
           </div>
           <button
             type='button'
-            className='rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700'
+            className='w-8 h-8 flex items-center justify-center rounded-full text-[#B2AC9C] hover:bg-[#F1EFE9] hover:text-[#6B675C] transition-colors'
             aria-label='Close modal'
             onClick={onClose}
           >
-            ✕
+            <HiX size={17} />
           </button>
         </div>
 
-        <div className='space-y-4'>
-          <div className='rounded-3xl p-4'>
+        <div className='p-6 space-y-5'>
+          <div>
             <label htmlFor='postText' className='sr-only'>Post text</label>
             <textarea
               onChange={(e) => {
@@ -100,52 +104,54 @@ const EditModal = ({ post, setAlert, onClose, setPosts }: Props) => {
               value={content}
               name='content'
               id='postText'
-              className='min-h-[160px] w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200'
+              className='min-h-[140px] w-full resize-none rounded-xl border border-[#E7E3DA] bg-[#F7F6F2] px-4 py-3 text-[14.5px] text-[#2A2822] outline-none transition-colors focus:border-[#435B52] focus:ring-2 focus:ring-[#E9EEEA] focus:bg-white placeholder:text-[#B2AC9C]'
               placeholder='What do you want to share today?'
             />
           </div>
 
-          <div className='rounded-3xl border border-slate-200 bg-white p-4'>
-            <div className='mb-3 flex items-center justify-between'>
-              <div>
-                <p className='text-sm font-medium text-slate-800'>Media</p>
-                <p className='text-xs text-slate-500'>Existing media (display only).</p>
+          {post.media && post.media.length > 0 && (
+            <div className='rounded-xl border border-[#E7E3DA] bg-white p-4'>
+              <div className='mb-3'>
+                <p className='text-[13px] font-medium text-[#3A3833]'>Media</p>
+                <p className='text-[11.5px] text-[#9C978A] mt-0.5'>Existing attachments, display only</p>
               </div>
-              <div className='flex items-center gap-2'>
-                <div className='text-xs text-slate-500'>Media cannot be changed here</div>
+              <input ref={fileRef} id='file' className='hidden' type='file' hidden />
+
+              <div className='flex gap-2 flex-wrap'>
+                {post.media.map((m) => (
+                  <img key={m.media_id} src={m.file_url} alt='post media' className='h-24 w-24 object-cover rounded-lg border border-[#E7E3DA]' />
+                ))}
               </div>
-              <input ref={fileRef} id='file' className='p-2' type='file' hidden />
             </div>
+          )}
 
-            <div className='mt-3 flex gap-2 flex-wrap'>
-              {post.media && post.media.map((m) => (
-                <img key={m.media_id} src={m.file_url} alt='post media' className='h-28 w-28 object-cover rounded-md' />
-              ))}
-            </div>
-          </div>
-
-          <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-            <div className=''>
-              <select name='visiblity' value={visibility} onChange={(e) => setVisibility(e.target.value)}>
-                <option value='all'>All</option>
+          <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1'>
+            <div>
+              <select
+                name='visiblity'
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value)}
+                className='rounded-lg border border-[#E7E3DA] bg-[#F7F6F2] px-3 py-2 text-[13px] text-[#3A3833] outline-none focus:border-[#435B52] focus:ring-2 focus:ring-[#E9EEEA] transition-colors'
+              >
+                <option value='all'>Public</option>
                 <option value='onlyme'>Only me</option>
               </select>
             </div>
             <div className='flex flex-wrap gap-2'>
 
               <button
-                onClick={handleUpdatePost}
                 type='button'
-                className='rounded-2xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800'
-              >
-                Update
-              </button>
-              <button
-                type='button'
-                className='rounded-2xl bg-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-300'
+                className='rounded-xl px-4 py-2 text-[13px] font-medium text-[#9C978A] hover:bg-[#F1EFE9] transition-colors'
                 onClick={onClose}
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleUpdatePost}
+                type='button'
+                className='rounded-xl bg-[#26241F] hover:bg-[#3A3833] px-5 py-2 text-[13px] font-medium text-white transition-colors duration-150'
+              >
+                Save changes
               </button>
             </div>
           </div>

@@ -1,10 +1,10 @@
 import { useContext, useState } from 'react'
-import { BsEye, BsEyeSlash } from 'react-icons/bs';
+import { BsEye, BsEyeSlash, BsPerson, BsEnvelope, BsLock } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios"
-// import Alert from '../components/Alert'
 import type { AlertData } from '../components/Alert';
 import { UserDataContext } from '../context/userContext';
+import AuthLayout from '../components/AuthLayout';
 
 interface RegisterData {
     name: string;
@@ -79,84 +79,84 @@ const AdminRegister = ({setAlert}:{ setAlert: React.Dispatch<React.SetStateActio
     }
 
     return (
-        <div>
-            <div className='w-full h-screen flex items-center justify-center'>
-                <div className='w-[450px] min-h-[400px] bg-gray-200 rounded-lg flex flex-col items-center p-6'>
-                    <h1 className='text-2xl font-bold'>Admin Register Page</h1>
-                    <div className="w-full mt-4">
-
-                       
-                        <div className='mb-2 flex flex-col w-full'>
-                            <label htmlFor="name" className="block mb-2">Name</label>
-                            <input
-                                onChange={handleChange}
-                                value={adminRegisterData.name}
-                                name='name'
-                                type="text"
-                                placeholder='Enter Name'
-                                className={`${fieldErrors.name?"border border-red-400": ""} w-full p-2 rounded-md`}
-                            />
-                            <div className='h-4'>
-                            {fieldErrors.name && (
-                                <p className='text-red-500 text-xs mt-1'>{fieldErrors.name}</p>
-                            )}
-                            </div>
-                        </div>
-
-                        {/* Email */}
-                        <div className='mb-2 flex flex-col w-full'>
-                            <label htmlFor="email" className="block mb-2">Email</label>
-                            <input
-                                onChange={handleChange}
-                                value={adminRegisterData.email}
-                                name='email'
-                                type="email"
-                                placeholder='Enter Email'
-                                className={`${fieldErrors.email?"border border-red-400": ""} w-full p-2 rounded-md`}
-                            />
-                            <div className='h-4'>
-                            {fieldErrors.email && (
-                                <p className='text-red-500 text-xs mt-1'>{fieldErrors.email}</p>
-                            )}
-                            </div>
-                        </div>
-
-                        {/* Password */}
-                        <div className='mb-2 flex flex-col w-full'>
-                            <label htmlFor="password" className="block mb-2">Password</label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    onChange={handleChange}
-                                    value={adminRegisterData.password}
-                                    name='password'
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Enter Password"
-                                    className={`${fieldErrors.password?"border border-red-400": ""} w-full p-2 rounded-md`}
-                                />
-                                <span onClick={() => setShowPassword(!showPassword)}>
-                                    {showPassword ? <BsEye /> : <BsEyeSlash />}
-                                </span>
-                            </div>
-                            <div className='h-4'>
-                            {fieldErrors.password && (
-                                <p className='text-red-500 text-xs mt-1'>{fieldErrors.password}</p>
-                            )}
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleSubmit}
-                            className='w-full bg-blue-500 text-white p-2 rounded-md'>
-                            Register
-                        </button>
-                    </div>
-
-                    <div className='w-full mt-8 text-center'>
-                        <p>Already have an Account? <a href='/admin/login' className='text-blue-500'>Login</a></p>
-                    </div>
-                </div>
+        <AuthLayout
+          admin
+          eyebrow="Restricted access"
+          title="Request admin access"
+          subtitle="Register to join the team behind the curtains."
+        >
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="label-luxe">Name</label>
+              <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.name ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+                <BsPerson className="text-ink-300 shrink-0" />
+                <input
+                  id="name"
+                  onChange={handleChange}
+                  value={adminRegisterData.name}
+                  name="name"
+                  type="text"
+                  placeholder="Your name"
+                  className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+                />
+              </div>
+              {fieldErrors.name && <p className="text-xs font-medium text-clay-600">{fieldErrors.name}</p>}
             </div>
-        </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="label-luxe">Email</label>
+              <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.email ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+                <BsEnvelope className="text-ink-300 shrink-0" />
+                <input
+                  id="email"
+                  onChange={handleChange}
+                  value={adminRegisterData.email}
+                  name="email"
+                  type="email"
+                  placeholder="admin@connecthub.app"
+                  className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+                />
+              </div>
+              {fieldErrors.email && <p className="text-xs font-medium text-clay-600">{fieldErrors.email}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="label-luxe">Password</label>
+              <div className={`flex items-center gap-2.5 rounded-xl border bg-ivory-100 px-3.5 py-2.5 transition-all duration-150 focus-within:bg-white focus-within:ring-[3px] ${fieldErrors.password ? 'border-clay-500 focus-within:ring-clay-100' : 'border-ivory-300 focus-within:border-sage-600 focus-within:ring-sage-200/70'}`}>
+                <BsLock className="text-ink-300 shrink-0" />
+                <input
+                  id="password"
+                  onChange={handleChange}
+                  value={adminRegisterData.password}
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="At least 6 characters"
+                  className="w-full bg-transparent text-[13.5px] text-ink-900 outline-none placeholder:text-ink-300"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-ink-300 transition-colors hover:text-ink-800 focus:outline-none shrink-0"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <BsEye /> : <BsEyeSlash />}
+                </button>
+              </div>
+              {fieldErrors.password && <p className="text-xs font-medium text-clay-600">{fieldErrors.password}</p>}
+            </div>
+
+            <button onClick={handleSubmit} className="btn-primary w-full py-3 text-[13.5px]">
+              Request access
+            </button>
+          </div>
+
+          <div className="mt-7 text-center text-[13px] text-ink-400">
+            Already registered?{" "}
+            <a href="/admin/login" className="font-semibold text-sage-700 transition-colors hover:text-sage-600 hover:underline">
+              Sign in
+            </a>
+          </div>
+        </AuthLayout>
     )
 }
 

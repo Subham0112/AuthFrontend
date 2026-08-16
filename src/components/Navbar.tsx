@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { useNavigate, useLocation } from "react-router-dom"
 import axios from "axios"
 import { UserDataContext } from "../context/userContext"
@@ -8,14 +9,18 @@ import { HiUserGroup, HiOutlineUserGroup } from "react-icons/hi"
 import RequestModal from "./RequestModal"
 
 import { HiOutlineLogout } from "react-icons/hi"
+import ConfirmModal from "./ConfirmModal"
 import skeletonProfile from "../assets/img/skeleton_profile.jpg"
 import { io } from "socket.io-client"
+
+const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
 
 const Navbar = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const context = useContext(UserDataContext)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [totalUnread, setTotalUnread] = useState(0)
   const [showRequestModal, setShowRequestModal] = useState(false)
 const [pendingRequestCount, setPendingRequestCount] = useState(0)
@@ -100,26 +105,26 @@ useEffect(() => {
 
 
   return (
-    <nav className="sticky top-0 z-40 w-full bg-white border-b border-slate-100 shadow-[0_1px_8px_rgba(0,0,0,0.05)]">
-      <div className="max-w-6xl mx-auto pl-6 pr-4 h-[60px] flex items-center justify-between">
+    <nav className="sticky top-0 z-40 w-full border-b border-ivory-400/80 bg-white/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between px-4 sm:px-6">
 
         {/* Logo */}
         <div
           onClick={() => navigate("/homepage")}
-          className="cursor-pointer flex items-center gap-2 select-none"
+          className="flex cursor-pointer select-none items-center gap-2.5"
         >
-          <div className="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center shadow-sm">
-            <span className="text-white text-sm font-bold">M</span>
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink-900 shadow-sm">
+            <span style={serif} className="text-[13px] font-medium text-white">CH</span>
           </div>
-          <span className="text-slate-800 font-bold text-lg tracking-tight">MySocial</span>
+          <span style={serif} className="text-lg font-medium tracking-tight text-ink-900">ConnectHub</span>
         </div>
 
         {/* Nav Links */}
-        <div className="flex items-center gap-1">
+        <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
           <NavButton
             onClick={() => navigate("/homepage")}
             active={isActive("/homepage")}
-            icon={isActive("/homepage") ? <HiHome size={22} /> : <HiOutlineHome size={22} />}
+            icon={isActive("/homepage") ? <HiHome size={20} /> : <HiOutlineHome size={20} />}
             label="Home"
           />
 
@@ -128,62 +133,69 @@ useEffect(() => {
             <NavButton
               onClick={() => navigate("/messages")}
               active={location.pathname.startsWith("/messages")}
-              icon={location.pathname.startsWith("/messages") ? <IoChatbubble size={20} /> : <IoChatbubbleOutline size={20} />}
+              icon={location.pathname.startsWith("/messages") ? <IoChatbubble size={18} /> : <IoChatbubbleOutline size={18} />}
               label="Messages"
             />
             {totalUnread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center pointer-events-none">
+              <span className="absolute right-2.5 top-0.5 flex min-w-[16px] h-4 items-center justify-center rounded-full bg-clay-600 px-0.5 text-[9px] font-bold text-white pointer-events-none">
                 {totalUnread > 99 ? "99+" : totalUnread}
               </span>
             )}
           </div>
-
-     
-
         </div>
 
-        {/* Avatar + Logout */}
-        <div className="flex items-center gap-3">
-          
+        {/* Avatar + Requests + Logout */}
+        <div className="flex items-center gap-1">
           <div
             onClick={() => navigate("/dashboard")}
-            className="flex flex-col items-center gap-0.5 px-4  rounded-xl transition-all duration-150 group text-slate-400 hover:text-slate-700 hover:bg-slate-50 "
+            className="group flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition-colors duration-150 hover:bg-ivory-100"
           >
-              <img
-                src={user.profile_url || skeletonProfile}
-                alt={user.user_name}
-                className="w-9 h-9 rounded-full object-cover"
-              />
-              <span className={`text-[10px] font-medium tracking-wide "text-slate-400 group-hover:text-slate-600"`}>Profile</span>
-           
+            <img
+              src={user.profile_url || skeletonProfile}
+              alt={user.user_name}
+              className="h-8 w-8 rounded-full object-cover ring-1 ring-ivory-400"
+            />
+            <span className="text-[10px] font-medium tracking-wide text-ink-300 group-hover:text-ink-600">Profile</span>
           </div>
-                 <div className="relative">
-          <NavButton
-           onClick={() => setShowRequestModal(!showRequestModal)}
-           active={showRequestModal}
-           icon={showRequestModal ? <HiUserGroup size={20} /> : <HiOutlineUserGroup size={20} />}
-           label="Requests"
-         />
-        {pendingRequestCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center pointer-events-none">
-      {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
-        </span>
-       )}
-       </div>
+          <div className="relative">
+            <NavButton
+              onClick={() => setShowRequestModal(!showRequestModal)}
+              active={showRequestModal}
+              icon={showRequestModal ? <HiUserGroup size={18} /> : <HiOutlineUserGroup size={18} />}
+              label="Requests"
+            />
+            {pendingRequestCount > 0 && (
+              <span className="absolute right-2.5 top-0.5 flex min-w-[16px] h-4 items-center justify-center rounded-full bg-gold-600 px-0.5 text-[9px] font-bold text-white pointer-events-none">
+                {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
+              </span>
+            )}
+          </div>
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutModal(true)}
             disabled={loggingOut}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 text-sm font-medium transition-all duration-150"
+            className="ml-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-400 transition-colors duration-150 hover:bg-clay-100 hover:text-clay-600"
           >
-            <HiOutlineLogout size={17} />
-            <span className="hidden sm:inline">Logout</span>
+            <HiOutlineLogout size={16} />
+            <span className="hidden sm:inline">{loggingOut ? "Signing out…" : "Logout"}</span>
           </button>
         </div>
 
       </div>
       {showRequestModal && (
-  <RequestModal onClose={() => setShowRequestModal(false)} />
-)}
+        <RequestModal onClose={() => setShowRequestModal(false)} />
+      )}
+      {showLogoutModal &&
+        createPortal(
+          <ConfirmModal
+            title="Log out"
+            message="Are you sure you want to log out of ConnectHub? You'll need to sign in again to continue."
+            confirmLabel="Log out"
+            loading={loggingOut}
+            onConfirm={handleLogout}
+            onClose={() => setShowLogoutModal(false)}
+          />,
+          document.body
+        )}
     </nav>
   )
 }
@@ -201,14 +213,15 @@ const NavButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-150 group
-      ${active
-        ? "text-indigo-600 bg-indigo-50"
-        : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+    className={`flex flex-col items-center gap-1 rounded-xl px-4 py-1.5 transition-colors duration-150
+      ${
+        active
+          ? "bg-sage-100 text-sage-700"
+          : "text-ink-300 hover:bg-ivory-100 hover:text-ink-800"
       }`}
   >
     {icon}
-    <span className={`text-[10px] font-medium tracking-wide ${active ? "text-indigo-500" : "text-slate-400 group-hover:text-slate-600"}`}>
+    <span className={`text-[10px] font-semibold tracking-wide ${active ? "text-sage-700" : "text-ink-300"}`}>
       {label}
     </span>
   </button>

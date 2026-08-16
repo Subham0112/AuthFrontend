@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import skeletonProfile from "../assets/img/skeleton_profile.jpg"
 import api from "../lib/axiosInstance"
 import { BsFillPersonXFill } from "react-icons/bs"
@@ -53,11 +53,11 @@ const SentRequestList = ({ showSentRequests }: { showSentRequests: boolean }) =>
   }
 
   if (loading) {
-    return <p className="text-slate-400 text-sm text-center py-6">Loading sent requests...</p>
+    return <p className="text-ink-400 text-sm text-center py-6">Loading sent requests…</p>
   }
 
   if (sentRequests.length === 0) {
-    return <p className="text-slate-400 text-sm text-center py-6">No sent requests.</p>
+    return <p className="text-ink-400 text-sm text-center py-6">No sent requests.</p>
   }
 
   return (
@@ -65,19 +65,19 @@ const SentRequestList = ({ showSentRequests }: { showSentRequests: boolean }) =>
       {sentRequests.map((request) => (
         <div
           key={request.id}
-          className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all"
+          className="flex items-center gap-3 rounded-xl p-3 transition-all duration-150 hover:bg-ivory-100"
         >
           <img
             src={request.req_receiver?.profile_url || skeletonProfile}
             alt={request.req_receiver?.user_name}
-            className="w-11 h-11 rounded-full object-cover flex-shrink-0"
+            className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-ivory-400"
           />
-          <span className="flex-1 text-sm font-semibold text-slate-800 truncate">
+          <span className="flex-1 truncate text-sm font-semibold text-ink-800">
             {request.req_receiver?.user_name}
           </span>
           <button
             onClick={() => handleCancel(request.receiver_id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 text-xs font-medium transition-all"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-ink-400 transition-all duration-150 hover:bg-clay-100 hover:text-clay-600"
           >
             <BsFillPersonXFill size={13} />
             Cancel
