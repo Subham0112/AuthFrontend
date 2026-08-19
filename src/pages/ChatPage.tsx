@@ -1,8 +1,8 @@
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { io } from "socket.io-client";
 import axios from "axios";
 import api from "../lib/axiosInstance";
+import { connectSocket, getSocket } from "../lib/socket";
 import { BsArrowLeft, BsSendFill } from "react-icons/bs";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { HiDotsVertical } from "react-icons/hi";
@@ -30,7 +30,6 @@ interface OtherUser {
 // Shared type-scale helper for the display face used on names and headers.
 const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
 
-const socket = io(import.meta.env.VITE_BACKEND_API, { withCredentials: true });
 const getInitials = (name?: string) => name?.slice(0, 2).toUpperCase() || "?";
 
 const isSameDay = (a: string, b: string) => {
@@ -290,7 +289,10 @@ useEffect(() => {
   useEffect(() => {
     if (!currentUserId) return;
 
-    socket.emit("join", currentUserId);
+    // Shared socket: joins user_<id> now AND re-joins automatically after
+    // every reconnect (this is what keeps "seen / typing / incoming"
+    // updates working even after a connection drop)
+    const socket = connectSocket(currentUserId);
 
     socket.on("receive_message", (message: MessageData) => {
       const isCurrentConversation =
@@ -388,10 +390,10 @@ useEffect(() => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
-    socket.emit("typing", { senderId: currentUserId, receiverId: otherUserId });
+    getSocket()?.emit("typing", { senderId: currentUserId, receiverId: otherUserId });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("stop_typing", {
+      getSocket()?.emit("stop_typing", {
         senderId: currentUserId,
         receiverId: otherUserId,
       });
@@ -409,7 +411,7 @@ useEffect(() => {
       );
         shouldScrollToBottomRef.current = true;
       setMessages((prev) => [...prev, res.data.data]);
-      socket.emit("send_message", {
+      getSocket()?.emit("send_message", {
         senderId: currentUserId,
         receiverId: otherUserId,
         message: newMessage,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import skeletonProfile from "../assets/img/skeleton_profile.jpg"
 import api from "../lib/axiosInstance"
+import { getSocket } from "../lib/socket"
 import { BsFillPersonXFill } from "react-icons/bs"
 
 interface receiverUser {
@@ -38,6 +39,30 @@ const SentRequestList = ({ showSentRequests }: { showSentRequests: boolean }) =>
     }
     if (showSentRequests) {
       fetchSentRequests()
+    }
+  }, [showSentRequests])
+
+  // Realtime: the other person accepted or rejected → drop it from the
+  // sent list instantly (no manual refresh)
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket || !showSentRequests) return
+
+    const removeRequest = (data: { sender_id: number; receiver_id: number }) => {
+      setSentRequests((prev) =>
+        prev.filter(
+          (r) => !(r.sender_id === data.sender_id && r.receiver_id === data.receiver_id)
+        )
+      )
+    }
+    const onAccepted = removeRequest
+    const onRejected = removeRequest
+
+    socket.on("friend_request_accepted", onAccepted)
+    socket.on("friend_request_rejected", onRejected)
+    return () => {
+      socket.off("friend_request_accepted", onAccepted)
+      socket.off("friend_request_rejected", onRejected)
     }
   }, [showSentRequests])
 

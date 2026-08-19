@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import skeletonProfile from "../assets/img/skeleton_profile.jpg"
 
 import api from "../lib/axiosInstance"
+import { getSocket } from "../lib/socket"
 import { FaCheck } from "react-icons/fa"
 import { ImCross } from "react-icons/im"
 
@@ -11,7 +12,7 @@ interface senderUser {
   profile_url?: string | null
 }
 interface FriendRequestData {
-  id: number
+  friends_id: number
   sender_id: number
   receiver_id: number
   friend_status: string
@@ -40,6 +41,31 @@ const FriendRequest = ({ showRequest }: { showRequest: boolean }) => {
     }
     if (showRequest) {
       fetchFriendRequests()
+    }
+  }, [showRequest])
+
+  // Realtime: a new request arrives → prepend it instantly (no refresh)
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket || !showRequest) return
+
+    const onReceived = (data: FriendRequestData) => {
+      setFriendRequests((prev) => {
+        if (prev.some((r) => r.sender_id === data.sender_id)) return prev
+        return [data, ...prev]
+      })
+    }
+    const onCancelled = (data: { sender_id: number }) => {
+      setFriendRequests((prev) =>
+        prev.filter((r) => r.sender_id !== data.sender_id)
+      )
+    }
+
+    socket.on("friend_request_received", onReceived)
+    socket.on("friend_request_cancelled", onCancelled)
+    return () => {
+      socket.off("friend_request_received", onReceived)
+      socket.off("friend_request_cancelled", onCancelled)
     }
   }, [showRequest])
 
@@ -78,7 +104,7 @@ const FriendRequest = ({ showRequest }: { showRequest: boolean }) => {
     <div className="flex flex-col gap-2">
       {friendRequests.map((request) => (
         <div
-          key={request.id}
+          key={request.friends_id}
           className="flex items-center gap-3 rounded-xl p-3 transition-all duration-150 hover:bg-ivory-100"
         >
           <img

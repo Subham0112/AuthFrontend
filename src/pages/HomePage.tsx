@@ -6,7 +6,7 @@ import type { AlertData } from "../components/Alert";
 import CommentModal from "../components/CommentModal";
 import LikesModal from "../components/LikeModal";
 import PostModal from "../components/PostModal";
-import { FaThumbsUp, FaRegThumbsUp, FaRegComment } from "react-icons/fa";
+import { FaThumbsUp, FaRegThumbsUp, FaRegComment, FaFire } from "react-icons/fa";
 import {
   HiOutlineUser,
   HiOutlinePencilAlt,
@@ -15,6 +15,7 @@ import {
 import { UserDataContext } from "../context/userContext";
 import skeletonProfile from "../assets/img/skeleton_profile.jpg";
 import api from "../lib/axiosInstance";
+import { getSocket } from "../lib/socket";
 
 interface Media {
   media_id: number;
@@ -41,6 +42,7 @@ export interface PostData {
   likeCount: number;
   commentCount: number;
   likedByCurrentUser: boolean;
+  score?: number;
 }
 
 interface FriendUser {
@@ -117,6 +119,31 @@ const HomePage = ({
     };
     fetchFriends();
   }, []);
+
+  // Realtime: keep "Your circle" fresh when friend relations change
+  // (someone accepts my request, unfriends me, etc.)
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !context?.user?.id) return;
+
+    const refreshFriends = async () => {
+      try {
+        const res = await api.get(`/allFriends`);
+        if (res.status === 200) setFriends(res.data.friends.slice(0, 4));
+      } catch (error) {
+        console.error("Error refreshing friends:", error);
+      }
+    };
+
+    socket.on("friend_request_accepted", refreshFriends);
+    socket.on("friend_removed", refreshFriends);
+    socket.on("friend_request_count", refreshFriends);
+    return () => {
+      socket.off("friend_request_accepted", refreshFriends);
+      socket.off("friend_removed", refreshFriends);
+      socket.off("friend_request_count", refreshFriends);
+    };
+  }, [context?.user?.id]);
 
   const loadMorePosts = useCallback(async () => {
     if (loadingMoreRef.current || loading || !hasMore) return;
@@ -351,6 +378,12 @@ const HomePage = ({
                           <span className="text-[10px] font-medium uppercase tracking-wide text-ink-400">
                             {post.visiblity === "all" ? "Public" : "Only me"}
                           </span>
+                          {post.likeCount * 3 + post.commentCount * 4 >= 15 && (
+                            <span className="ml-1 flex items-center gap-1 rounded-full bg-clay-50 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-clay-600">
+                              <FaFire size={8} />
+                              Trending
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -15,6 +15,7 @@ import { ImCross } from "react-icons/im";
 import { HiOutlinePencilAlt } from "react-icons/hi";
 import api from "../lib/axiosInstance";
 import axios from "axios";
+import { getSocket } from "../lib/socket";
 import CommentModal from "../components/CommentModal";
 import LikeModal from "../components/LikeModal";
 import type { AlertData } from "../components/Alert";
@@ -135,6 +136,59 @@ const ProfilePage = ({
       fetchUserFriedsStatus();
     }
   }, [otherUserId]);
+
+  // ── Realtime friend-status updates ────────────────────────────────────
+  // The Add Friend / Cancel / Accept / Friends button changes instantly
+  // when the OTHER user does something in their browser — no refresh needed.
+  useEffect(() => {
+    const socket = getSocket();
+    const me = context?.user?.id;
+    if (!socket || !me || !user_id) return;
+
+    const onAccepted = (data: { sender_id: number; receiver_id: number }) => {
+      // I sent a request to this user and they accepted it
+      if (data.sender_id === me && data.receiver_id === user_id) {
+        setFriendStatus("friends");
+      }
+    };
+    const onRejected = (data: { sender_id: number; receiver_id: number }) => {
+      // I sent a request to this user and they rejected it
+      if (data.sender_id === me && data.receiver_id === user_id) {
+        setFriendStatus("none");
+      }
+    };
+    const onReceived = (data: { sender_id: number; receiver_id: number }) => {
+      // This user just sent ME a request (e.g. from another tab)
+      if (data.sender_id === user_id && data.receiver_id === me) {
+        setFriendStatus("pending_received");
+      }
+    };
+    const onCancelled = (data: { sender_id: number; receiver_id: number }) => {
+      // This user cancelled the request they sent me
+      if (data.sender_id === user_id && data.receiver_id === me) {
+        setFriendStatus("none");
+      }
+    };
+    const onRemoved = (data: { user_id: number }) => {
+      // This user unfriended me
+      if (data.user_id === user_id) {
+        setFriendStatus("none");
+      }
+    };
+
+    socket.on("friend_request_accepted", onAccepted);
+    socket.on("friend_request_rejected", onRejected);
+    socket.on("friend_request_received", onReceived);
+    socket.on("friend_request_cancelled", onCancelled);
+    socket.on("friend_removed", onRemoved);
+    return () => {
+      socket.off("friend_request_accepted", onAccepted);
+      socket.off("friend_request_rejected", onRejected);
+      socket.off("friend_request_received", onReceived);
+      socket.off("friend_request_cancelled", onCancelled);
+      socket.off("friend_removed", onRemoved);
+    };
+  }, [otherUserId, context?.user?.id, user_id]);
 
   const handleLikeToggle = async (postId: number) => {
     try {

@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api from '../lib/axiosInstance'
-import { io } from "socket.io-client"
+import { connectSocket } from '../lib/socket'
 import type { AlertData } from '../components/Alert'
 import Navbar from '../components/Navbar'
 import { UserDataContext } from '../context/userContext'
@@ -91,8 +91,7 @@ const Messages = ({ setAlert }: { setAlert: React.Dispatch<React.SetStateAction<
   useEffect(() => {
     if (!currentUserId) return
 
-    const socket = io(import.meta.env.VITE_BACKEND_API, { withCredentials: true })
-    socket.emit("join", currentUserId)
+    const socket = connectSocket(currentUserId)
 
     socket.on("receive_message", (message) => {
       if (message.sender_id === currentUserId) return

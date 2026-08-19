@@ -11,7 +11,7 @@ import RequestModal from "./RequestModal"
 import { HiOutlineLogout } from "react-icons/hi"
 import ConfirmModal from "./ConfirmModal"
 import skeletonProfile from "../assets/img/skeleton_profile.jpg"
-import { io } from "socket.io-client"
+import { connectSocket } from "../lib/socket"
 
 const serif = { fontFamily: "'Fraunces', 'Iowan Old Style', Georgia, serif" };
 
@@ -44,40 +44,73 @@ useEffect(() => {
 }, [context?.user?.id])
   
  useEffect(() => {
-  if (!context?.user?.id) return
+    if (!context?.user?.id) return
 
 
-  const fetchUnread = async () => {
-    try {
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_API}/total-unread`, {
-        withCredentials: true,
-      })
-      setTotalUnread(res.data.count)
-    } catch (err) {
-      console.log("Error fetching unread count", err)
+    const fetchUnread = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_API}/total-unread`, {
+          withCredentials: true,
+        })
+        setTotalUnread(res.data.count)
+      } catch (err) {
+        console.log("Error fetching unread count", err)
+      }
     }
-  }
-  fetchUnread()
+    fetchUnread()
 
-  const socket = io(import.meta.env.VITE_BACKEND_API, { withCredentials: true })
-  socket.emit("join", user.id)
+    const socket = connectSocket(context.user.id)
+    socket.emit("join", context.user.id)
 
-  socket.on("receive_message", () => {
-    if (!location.pathname.startsWith("/messages")) {
-      setTotalUnread((n) => n + 1)
+    // Server pushes the authoritative unread-conversation count whenever
+    // it changes (new message, chat marked as read, etc.)
+    const onTotalUnreadCount = (count: number) => setTotalUnread(count)
+    // Fallback: message arrived → ask the server for the true count
+    const onReceiveMessage = () => {
+      if (!location.pathname.startsWith("/messages")) {
+        fetchUnread()
+      }
     }
-  })
+    // Realtime friend-request badge sync (server sends the authoritative count)
+    const onFriendRequestCount = (count: number) => setPendingRequestCount(count)
+    // Fallbacks in case the count event is missed (e.g. opened on another tab)
+    const onFriendRequestReceived = () => setPendingRequestCount((n) => n + 1)
+    const onFriendRequestCancelled = () =>
+      setPendingRequestCount((n) => (n > 0 ? n - 1 : 0))
 
-  return () => {
-    socket.disconnect()
-  }
-}, [context?.user?.id])
+    socket.on("total_unread_count", onTotalUnreadCount)
+    socket.on("receive_message", onReceiveMessage)
+    socket.on("friend_request_count", onFriendRequestCount)
+    socket.on("friend_request_received", onFriendRequestReceived)
+    socket.on("friend_request_cancelled", onFriendRequestCancelled)
 
+    return () => {
+      socket.off("total_unread_count", onTotalUnreadCount)
+      socket.off("receive_message", onReceiveMessage)
+      socket.off("friend_request_count", onFriendRequestCount)
+      socket.off("friend_request_received", onFriendRequestReceived)
+      socket.off("friend_request_cancelled", onFriendRequestCancelled)
+      socket.disconnect()
+    }
+  }, [context?.user?.id])
+
+  // Re-fetch the true unread count whenever the route changes — opening a
+  // chat marks its messages as read, so coming back must refresh the badge
+  // (e.g. 2 unread conversations → open one → badge should show 1)
   useEffect(() => {
-    if (location.pathname.startsWith("/messages")) {
-      setTotalUnread(0)
+    if (!context?.user?.id) return
+    const fetchUnread = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_API}/total-unread`, {
+          withCredentials: true,
+        })
+        setTotalUnread(res.data.count)
+      } catch (err) {
+        console.log("Error fetching unread count", err)
+      }
     }
-  }, [location.pathname])
+    fetchUnread()
+  }, [location.pathname, context?.user?.id])
 
   if (!context) return null
   const { setUser, user } = context
